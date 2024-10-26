@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Account Status Update</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2>Account Status Update</h2>
+
+  <p>Hello <span th:text="${firstName}">User</span>,</p>
+
+  <p>Your account status has been updated to: <strong th:text="${status}">STATUS</strong></p>
+
+  <p>If you have any questions about this change, please contact our support team.</p>
+
+  <p>Best regards,<br>Your Marketplace Team</p>
+</div>
+</body>
+</html>

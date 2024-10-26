@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Account Deleted</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2>Account Deletion Confirmation</h2>
+
+  <p>Hello <span th:text="${firstName}">User</span>,</p>
+
+  <p>We're sorry to see you go. This email confirms that your account has been successfully deleted.</p>
+
+  <div style="background-color: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 4px;">
+    <h3 style="margin-top: 0;">Important Information</h3>
+    <ul style="padding-left: 20px;">
+      <li>Your personal data will be removed according to our privacy policy</li>
+      <li>Active listings have been removed</li>
+      <li>Pending transactions will be processed according to our terms</li>
+    </ul>
+  </div>
+
+  <p>If you didn't request this deletion, please contact our support team immediately at <span th:text="${supportEmail}">support@marketplace.com</span></p>
+
+  <div style="background-color: #e9ecef; padding: 15px; margin: 20px 0; border-radius: 4px;">
+    <p style="margin: 0;">
+      Want to come back? You can create a new account anytime at
+      <a th:href="${signupUrl}" style="color: #007bff;">our website</a>.
+    </p>
+  </div>
+
+  <p>Best regards,<br>Your Marketplace Team</p>
+
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+    <p>If you have any questions, please don't hesitate to reach out to our support team.</p>
+  </div>
+</div>
+</body>
+</html>

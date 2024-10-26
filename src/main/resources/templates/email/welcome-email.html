@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to Our Marketplace</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2>Welcome to Our Marketplace!</h2>
+
+  <p>Hello <span th:text="${firstName}">User</span>,</p>
+
+  <p>Thank you for joining our marketplace. We're excited to have you as part of our community!</p>
+
+  <div style="background-color: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 4px;">
+    <h3 style="margin-top: 0;">Getting Started</h3>
+    <ul style="padding-left: 20px;">
+      <li>Complete your profile</li>
+      <li>Browse available items</li>
+      <li>Create your first listing</li>
+      <li>Connect with other users</li>
+    </ul>
+  </div>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a th:href="${dashboardUrl}"
+       style="background-color: #4CAF50; color: white; padding: 12px 24px;
+                      text-decoration: none; border-radius: 4px;">
+      Visit Your Dashboard
+    </a>
+  </div>
+
+  <p>Need help getting started? Check out our <a th:href="${helpUrl}">Help Center</a> or contact our support team.</p>
+
+  <p>Best regards,<br>Your Marketplace Team</p>
+
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+    <p>Follow us on social media to stay updated:</p>
+    <div style="margin-top: 10px;">
+      <a th:href="${socialLinks.facebook}" style="margin-right: 10px;">Facebook</a>
+      <a th:href="${socialLinks.twitter}" style="margin-right: 10px;">Twitter</a>
+      <a th:href="${socialLinks.instagram}">Instagram</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
