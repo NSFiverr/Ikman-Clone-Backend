@@ -1,33 +1,33 @@
 spring:
   # Database Configuration
   datasource:
-    url: jdbc:mysql://localhost:3306/marketplace?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: user
-    password: password
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:marketplace}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
-        format_sql: true
+        format_sql: ${FORMAT_SQL:false}
         dialect: org.hibernate.dialect.MySQL8Dialect
 
   # File Upload Configuration
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: ${FILE_MAX_SIZE:10MB}
+      max-request-size: ${FILE_MAX_SIZE:10MB}
 
   # Mail Configuration
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: exotelhotel2@gmail.com
-    password: kvyrkigwoxvsltpw
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -40,10 +40,10 @@ spring:
             protocols: TLSv1.2
         transport:
           protocol: smtp
-        debug: true
+        debug: ${MAIL_DEBUG:false}
 
   # Thymeleaf Configuration
-  thymeleaf:    # Moved out of mail properties
+  thymeleaf:
     prefix: classpath:/templates/
     suffix: .html
     cache: false
@@ -52,28 +52,28 @@ spring:
 app:
   # Email Settings
   email:
-    from: exotelhotel2@gmail.com
-    support: exotelhotel2@gmail.com
+    from: ${APP_EMAIL_FROM}
+    support: ${APP_EMAIL_SUPPORT}
 
   # Frontend URL
   frontend:
-    url: http://localhost:3000
+    url: ${FRONTEND_URL:http://localhost:3000}
 
   # Social Media Links
   social:
-    facebook: https://facebook.com/yourmarketplace
-    twitter: https://twitter.com/yourmarketplace
-    instagram: https://instagram.com/yourmarketplace
+    facebook: ${SOCIAL_FACEBOOK:https://facebook.com/yourmarketplace}
+    twitter: ${SOCIAL_TWITTER:https://twitter.com/yourmarketplace}
+    instagram: ${SOCIAL_INSTAGRAM:https://instagram.com/yourmarketplace}
 
   # JWT Configuration
   jwt:
-    secret: ${JWT_SECRET:ABC1234}
-    expiration-in-ms: 86400000  # 24 hours
+    secret: ${JWT_SECRET}
+    expiration-in-ms: ${JWT_EXPIRATION:86400000}
 
   # File Storage Configuration
   file-storage:
-    upload-dir: ./uploads
-    max-file-size: 5242880  # 5MB in bytes
+    upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+    max-file-size: ${FILE_MAX_SIZE:5242880}
     allowed-extensions:
       - .jpg
       - .jpeg
@@ -82,16 +82,16 @@ app:
 
 # Server Configuration
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   error:
-    include-message: always
-    include-binding-errors: always
+    include-message: ${INCLUDE_MESSAGE:never}
+    include-binding-errors: ${INCLUDE_BINDING_ERRORS:never}
 
 # Logging Configuration
 logging:
   level:
-    org.springframework.security: DEBUG
-    com.marketplace: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.springframework.mail: DEBUG
+    org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
+    com.marketplace: ${LOG_LEVEL_APP:INFO}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:INFO}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_SQL_PARAMS:INFO}
+    org.springframework.mail: ${LOG_LEVEL_MAIL:INFO}

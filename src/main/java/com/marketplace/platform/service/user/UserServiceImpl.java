@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
             );
         } catch (MessagingException e) {
             // Log the error but don't stop the registration process
-            // You might want to implement a retry mechanism
+            // implement a retry mechanism
             log.error("Failed to send verification email", e);
         }
 
