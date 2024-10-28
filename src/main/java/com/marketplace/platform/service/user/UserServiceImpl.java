@@ -1,21 +1,22 @@
 package com.marketplace.platform.service.user;
 
+import com.marketplace.platform.domain.token.PasswordResetToken;
+import com.marketplace.platform.domain.token.VerificationToken;
 import com.marketplace.platform.domain.user.User;
 import com.marketplace.platform.domain.user.UserStatus;
-import com.marketplace.platform.domain.user.VerificationToken;
-import com.marketplace.platform.domain.user.PasswordResetToken;
 import com.marketplace.platform.dto.request.*;
 import com.marketplace.platform.dto.response.UserResponse;
 import com.marketplace.platform.exception.BadRequestException;
 import com.marketplace.platform.exception.ResourceNotFoundException;
+import com.marketplace.platform.repository.token.PasswordResetTokenRepository;
+import com.marketplace.platform.repository.token.VerificationTokenRepository;
 import com.marketplace.platform.repository.user.UserRepository;
-import com.marketplace.platform.repository.user.VerificationTokenRepository;
-import com.marketplace.platform.repository.user.PasswordResetTokenRepository;
 import com.marketplace.platform.service.email.EmailService;
 import com.marketplace.platform.service.storage.FileStorageService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,6 +38,12 @@ public class UserServiceImpl implements UserService {
     private final EmailService emailService;
     private final FileStorageService fileStorageService;
 
+    @Value("${app.token.verification.expiration-minutes}")
+    private int verificationTokenExpirationMinutes;
+
+    @Value("${app.token.password-reset.expiration-minutes}")
+    private int passwordResetTokenExpirationMinutes;
+
     @Override
     @Transactional
     public UserResponse registerUser(UserRegistrationRequest request) {
@@ -53,12 +60,15 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
 
-        VerificationToken verificationToken = new VerificationToken();
-        verificationToken.setUser(savedUser);
-        verificationToken.setToken(UUID.randomUUID().toString());
+        // Create verification token
+        VerificationToken verificationToken = VerificationToken.builder()
+                .token(UUID.randomUUID().toString())
+                .user(savedUser)
+                .expiresAt(LocalDateTime.now().plusMinutes(verificationTokenExpirationMinutes))
+                .build();
+
         verificationTokenRepository.save(verificationToken);
 
-        // Send verification email
         try {
             emailService.sendVerificationEmail(
                     savedUser.getEmail(),
@@ -66,11 +76,8 @@ public class UserServiceImpl implements UserService {
                     savedUser.getFirstName()
             );
         } catch (MessagingException e) {
-            // Log the error but don't stop the registration process
-            // implement a retry mechanism
             log.error("Failed to send verification email", e);
         }
-
 
         return mapToUserResponse(savedUser);
     }
@@ -90,26 +97,51 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void verifyEmail(String token) {
-        VerificationToken verificationToken = verificationTokenRepository.findByToken(token);
-
-        if (verificationToken == null) {
-            throw new BadRequestException("Invalid verification token");
-        }
-
-        if (verificationToken.isUsed()) {
-            throw new BadRequestException("Token already used");
-        }
-
-        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("Token has expired");
-        }
+        VerificationToken verificationToken = verificationTokenRepository.findValidToken(token)
+                .orElseThrow(() -> new BadRequestException("Invalid or expired verification token"));
 
         User user = verificationToken.getUser();
-        user.setEmailVerified(true);
+        user.setIsEmailVerified(true);
         userRepository.save(user);
 
-        verificationToken.setUsed(true);
-        verificationTokenRepository.save(verificationToken);
+        verificationTokenRepository.markTokenAsUsed(token);
+
+        // Cleanup any other pending tokens for this user
+        verificationTokenRepository.invalidateExistingTokens(user);
+    }
+
+    @Override
+    @Transactional
+    public void resendVerificationToken(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.getIsEmailVerified()) {
+            throw new BadRequestException("Email is already verified");
+        }
+
+        // Invalidate existing tokens
+        verificationTokenRepository.invalidateExistingTokens(user);
+
+        // Create new verification token
+        VerificationToken newToken = VerificationToken.builder()
+                .token(UUID.randomUUID().toString())
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusMinutes(verificationTokenExpirationMinutes))
+                .build();
+
+        verificationTokenRepository.save(newToken);
+
+        try {
+            emailService.sendVerificationEmail(
+                    user.getEmail(),
+                    newToken.getToken(),
+                    user.getFirstName()
+            );
+        } catch (MessagingException e) {
+            log.error("Failed to resend verification email", e);
+            throw new BadRequestException("Failed to resend verification email");
+        }
     }
 
     @Override
@@ -213,12 +245,12 @@ public class UserServiceImpl implements UserService {
     public void updateProfilePicture(Long userId, ProfilePictureRequest request) {
         User user = findUserById(userId);
 
-        if (user.getProfileImage() != null) {
-            fileStorageService.deleteFile(user.getProfileImage());
+        if (user.getProfileImagePath() != null) {
+            fileStorageService.deleteFile(user.getProfileImagePath());
         }
 
         String fileUrl = fileStorageService.storeFile(request.getFile());
-        user.setProfileImage(fileUrl);
+        user.setProfileImagePath(fileUrl);
         userRepository.save(user);
     }
 
@@ -233,13 +265,16 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-        // Invalidate any existing reset tokens
+        // Invalidate existing tokens
         passwordResetTokenRepository.invalidateExistingTokens(user);
 
         // Create new reset token
-        PasswordResetToken resetToken = new PasswordResetToken();
-        resetToken.setUser(user);
-        resetToken.setToken(UUID.randomUUID().toString());
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(UUID.randomUUID().toString())
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusMinutes(passwordResetTokenExpirationMinutes))
+                .build();
+
         passwordResetTokenRepository.save(resetToken);
 
         try {
@@ -254,22 +289,27 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+
     @Override
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new BadRequestException("Invalid reset token"));
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenAndExpiresAtAfter(token, LocalDateTime.now())
+                .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
 
-        if (resetToken.isUsed() || resetToken.isExpired()) {
-            throw new BadRequestException("Token is invalid or expired");
+        if (resetToken.getUsedAt() != null) {
+            throw new BadRequestException("Token has already been used");
         }
 
         User user = resetToken.getUser();
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        resetToken.setUsed(true);
+        // Mark the token as used
+        resetToken.setUsedAt(LocalDateTime.now());
         passwordResetTokenRepository.save(resetToken);
+
+        // Invalidate any other tokens
+        passwordResetTokenRepository.invalidateExistingTokens(user);
 
         try {
             emailService.sendPasswordChangeNotification(user.getEmail(), user.getFirstName());
@@ -277,6 +317,7 @@ public class UserServiceImpl implements UserService {
             log.error("Failed to send password change notification", e);
         }
     }
+
 
     @Override
     @Transactional
@@ -301,6 +342,16 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Transactional
+    public void cleanupExpiredTokens() {
+        LocalDateTime now = LocalDateTime.now();
+        int deletedVerificationTokens = verificationTokenRepository.deleteExpiredTokens(now);
+        int deletedResetTokens = passwordResetTokenRepository.deleteExpiredTokens(now);
+
+        log.info("Cleaned up {} expired verification tokens and {} expired reset tokens",
+                deletedVerificationTokens, deletedResetTokens);
+    }
+
     private UserResponse mapToUserResponse(User user) {
         UserResponse response = new UserResponse();
         response.setUserId(user.getUserId());
@@ -308,9 +359,9 @@ public class UserServiceImpl implements UserService {
         response.setFirstName(user.getFirstName());
         response.setLastName(user.getLastName());
         response.setPhone(user.getPhone());
-        response.setProfileImage(user.getProfileImage());
+        response.setProfileImage(user.getProfileImagePath());
         response.setStatus(user.getStatus().name());
-        response.setEmailVerified(user.isEmailVerified());
+        response.setEmailVerified(user.getIsEmailVerified());
         response.setCreatedAt(user.getCreatedAt());
         return response;
     }

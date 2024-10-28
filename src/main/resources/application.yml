@@ -70,6 +70,14 @@ app:
     secret: ${JWT_SECRET}
     expiration-in-ms: ${JWT_EXPIRATION:86400000}
 
+  token:
+    verification:
+      expiration-minutes: ${VERIFICATION_EXPIRATION:1440}
+    password-reset:
+      expiration-minutes: ${PASSWORD_RESET_EXPIRATION:30}
+
+
+
   # File Storage Configuration
   file-storage:
     upload-dir: ${FILE_UPLOAD_DIR:./uploads}
