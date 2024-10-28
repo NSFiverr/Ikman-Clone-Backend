@@ -21,6 +21,8 @@ public interface UserService {
     boolean isEmailTaken(String email);
     void verifyEmail(String token);
 
+    void resendVerificationToken(String email);
+
     // Password management
     void initiatePasswordReset(String email);
     void resetPassword(String token, String newPassword);

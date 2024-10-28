@@ -1,44 +1,75 @@
 package com.marketplace.platform.domain.user;
 
+import com.marketplace.platform.domain.advertisement.Advertisement;
+import com.marketplace.platform.domain.category.Category;
+import com.marketplace.platform.domain.interaction.*;
+import com.marketplace.platform.domain.token.PasswordResetToken;
+import com.marketplace.platform.domain.token.VerificationToken;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.*;
+
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @Entity
-@Table(name = "users")
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "users", indexes = {
+        @Index(name = "idx_user_email", columnList = "email")
+})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
-    @Column(unique = true, nullable = false)
+    @Email
+    @NotBlank
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @NotBlank
+    @Column(name = "password_hash", nullable = false, length = 60)
     private String passwordHash;
 
-    @Column(nullable = false)
+    @NotBlank
+    @Size(min = 2, max = 50)
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @Column(nullable = false)
+    @NotBlank
+    @Size(min = 2, max = 50)
+    @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Size(max = 20)
     private String phone;
-    private String profileImage;
+
+    @Column(name = "profile_image_path")
+    private String profileImagePath;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "user_status", nullable = false)
+    @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
-    private boolean isEmailVerified = false;
+    @Column(name = "is_email_verified", nullable = false)
+    @Builder.Default
+    private Boolean isEmailVerified = false;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist
@@ -51,4 +82,43 @@ public class User {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    // Relationships from User
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
+    private Set<UserRole> userRoles = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    @Builder.Default
+    private Set<Advertisement> advertisements = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    @Builder.Default
+    private Set<UserFavorite> favorites = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    @Builder.Default
+    private Set<Notification> notifications = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    @Builder.Default
+    private Set<AdView> adViews = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    @Builder.Default
+    private Set<ConversationParticipant> conversations = new HashSet<>();
+
+    @OneToMany(mappedBy = "createdBy")
+    @Builder.Default
+    private Set<Category> createdCategories = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    @ToString.Exclude
+    @Builder.Default
+    private Set<VerificationToken> verificationTokens = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    @ToString.Exclude
+    @Builder.Default
+    private Set<PasswordResetToken> passwordResetTokens = new HashSet<>();
 }

@@ -27,10 +27,10 @@ public class EmailConfig {
     @Value("${spring.mail.password}")
     private String password;
 
+    //temp fix
     @Bean
     public JavaMailSender javaMailSender() {
         try {
-            // Create a trust manager that does not validate certificate chains
             TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
                         public X509Certificate[] getAcceptedIssuers() {
@@ -41,7 +41,7 @@ public class EmailConfig {
                     }
             };
 
-            // Install the all-trusting trust manager
+
             SSLContext sc = SSLContext.getInstance("SSL");
             sc.init(null, trustAllCerts, new java.security.SecureRandom());
 
@@ -60,7 +60,6 @@ public class EmailConfig {
             props.put("mail.smtp.ssl.trust", "*");
             props.put("mail.smtp.ssl.protocols", "TLSv1.2");
 
-            // Set SSL socket factory
             props.put("mail.smtp.ssl.socketFactory", sc.getSocketFactory());
 
             return mailSender;
