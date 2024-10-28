@@ -13,6 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class UserController {
     }
 
     @GetMapping("/email/{email}")
-    public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
+    public ResponseEntity<Optional<UserResponse>> getUserByEmail(@PathVariable String email) {
         return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 
@@ -47,16 +49,16 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
-        userService.deleteUser(userId);
+    public ResponseEntity<Void> softDeleteUser(@PathVariable Long userId) {
+        userService.softDeleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
-    public ResponseEntity<Page<UserResponse>> getAllUsers(
+    public ResponseEntity<Page<UserResponse>> searchUsers(
             @ModelAttribute UserSearchCriteria criteria,
             Pageable pageable) {
-        return ResponseEntity.ok(userService.getAllUsers(criteria, pageable));
+        return ResponseEntity.ok(userService.searchUsers(criteria, pageable));
     }
 
     @PatchMapping("/{userId}/status")
@@ -71,6 +73,12 @@ public class UserController {
     public ResponseEntity<String> verifyEmail(@RequestParam String token) {
         userService.verifyEmail(token);
         return ResponseEntity.ok("Email verified successfully");
+    }
+
+    @PostMapping("/verify/resend")
+    public ResponseEntity<Void> resendVerificationToken(@RequestParam String email) {
+        userService.resendVerificationToken(email);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{userId}/profile")
@@ -108,5 +116,17 @@ public class UserController {
             @Valid @RequestBody ChangePasswordRequest request) {
         userService.changePassword(userId, request);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/inactive")
+    public ResponseEntity<Page<UserResponse>> getInactiveUsers(
+            @RequestParam int inactiveDays,
+            Pageable pageable) {
+        return ResponseEntity.ok(userService.getInactiveUsers(inactiveDays, pageable));
+    }
+
+    @GetMapping("/notifications/unread")
+    public ResponseEntity<Page<UserResponse>> getUsersWithUnreadNotifications(Pageable pageable) {
+        return ResponseEntity.ok(userService.getUsersWithUnreadNotifications(pageable));
     }
 }
