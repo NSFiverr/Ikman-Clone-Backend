@@ -22,11 +22,6 @@ spring:
       max-file-size: ${FILE_MAX_SIZE:10MB}
       max-request-size: ${FILE_MAX_SIZE:10MB}
 
-  cache:
-    cache-names: users, userStats
-    caffeine:
-      spec: maximumSize=500,expireAfterWrite=60m
-
   # Mail Configuration
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
@@ -92,15 +87,6 @@ app:
       - .jpeg
       - .png
       - .gif
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,metrics,prometheus
-  metrics:
-    tags:
-      application: marketplace-platform
 
 # Server Configuration
 server:

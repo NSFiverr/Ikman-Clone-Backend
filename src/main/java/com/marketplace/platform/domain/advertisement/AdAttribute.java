@@ -33,7 +33,7 @@ public class AdAttribute {
     private AdAttributeKey id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("adId")
+    @MapsId("adId") 
     @JoinColumn(name = "ad_id", nullable = false)
     private Advertisement advertisement;
 

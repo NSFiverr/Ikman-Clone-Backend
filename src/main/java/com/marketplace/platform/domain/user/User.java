@@ -21,10 +21,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users", indexes = {
-        @Index(name = "idx_user_email", columnList = "email"),
-        @Index(name = "idx_user_status", columnList = "user_status"),
-        @Index(name = "idx_user_created_at", columnList = "created_at"),
-        @Index(name = "idx_user_last_login", columnList = "last_login_at")
+        @Index(name = "idx_user_email", columnList = "email")
 })
 public class User {
     @Id
@@ -38,8 +35,7 @@ public class User {
     private String email;
 
     @NotBlank
-    @ToString.Exclude
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash", nullable = false, length = 60)
     private String passwordHash;
 
     @NotBlank
@@ -92,7 +88,7 @@ public class User {
     @Builder.Default
     private Set<UserRole> userRoles = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user")
     @Builder.Default
     private Set<Advertisement> advertisements = new HashSet<>();
 
