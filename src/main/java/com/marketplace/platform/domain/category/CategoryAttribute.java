@@ -39,7 +39,7 @@ public class CategoryAttribute {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    class CategoryAttributeKey implements Serializable {
+    public class CategoryAttributeKey implements Serializable {
         @Column(name = "category_id")
         private Long categoryId;
 
