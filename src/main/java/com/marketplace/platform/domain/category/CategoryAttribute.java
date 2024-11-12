@@ -21,6 +21,13 @@ public class CategoryAttribute {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    @Column(name = "version")
+    private Integer version = 1;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private CategoryAttributeStatus status = CategoryAttributeStatus.ACTIVE;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("attrDefId")
     @JoinColumn(name = "attr_def_id", nullable = false)
@@ -39,7 +46,7 @@ public class CategoryAttribute {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public class CategoryAttributeKey implements Serializable {
+    public static class CategoryAttributeKey implements Serializable {
         @Column(name = "category_id")
         private Long categoryId;
 

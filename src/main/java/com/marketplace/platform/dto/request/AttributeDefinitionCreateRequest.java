@@ -6,16 +6,21 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class CreateAttributeDefinitionRequest {
-    @NotBlank(message = "Name is required")
+public class AttributeDefinitionCreateRequest {
+
+    @NotBlank(message = "Attribute name is required")
     private String name;
 
+    @NotBlank(message = "Display name is required")
     private String displayName;
 
     @NotNull(message = "Data type is required")
     private FieldType dataType;
 
-    private Boolean isSearchable;
-    private Boolean isRequired;
+    private Boolean isSearchable = false;
+    private Boolean isRequired = false;
     private String validationRules;
 }
+
+
+

@@ -1,17 +1,16 @@
-package com.marketplace.platform.dto.response;
+package com.marketplace.platform.dto.request;
 
-import com.marketplace.platform.domain.category.FieldType;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class CategoryAttributeResponse {
+public class CategoryAttributeRequest {
     private Long attributeDefinitionId;
-    private String attributeName;
-    private String displayName;
     private Boolean isRequired;
     private Integer displayOrder;
     private String defaultValue;
     private String validationRules;
 }
+

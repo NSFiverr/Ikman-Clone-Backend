@@ -1,11 +1,12 @@
 package com.marketplace.platform.dto.response;
 
 import com.marketplace.platform.domain.category.FieldType;
+import lombok.Builder;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 public class AttributeDefinitionResponse {
     private Long attrDefId;
     private String name;
@@ -15,5 +16,4 @@ public class AttributeDefinitionResponse {
     private Boolean isRequired;
     private String validationRules;
     private LocalDateTime createdAt;
-
 }

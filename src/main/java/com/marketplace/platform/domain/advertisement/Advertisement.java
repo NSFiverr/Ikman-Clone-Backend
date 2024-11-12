@@ -1,6 +1,7 @@
 package com.marketplace.platform.domain.advertisement;
 
 import com.marketplace.platform.domain.category.Category;
+import com.marketplace.platform.domain.category.CategoryVersion;
 import com.marketplace.platform.domain.interaction.AdView;
 import com.marketplace.platform.domain.interaction.Conversation;
 import com.marketplace.platform.domain.interaction.Message;
@@ -40,10 +41,6 @@ public class Advertisement {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "package_id", nullable = false)
@@ -134,8 +131,15 @@ public class Advertisement {
     @OneToMany(mappedBy = "advertisement")
     private Set<SearchIndex> searchIndices = new HashSet<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_version_id", nullable = false)
+    private CategoryVersion categoryVersion;
+
     @PrePersist
     protected void onCreate() {
+        if (categoryVersion == null) {
+            throw new IllegalStateException("Advertisement must have a category version");
+        }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (viewCount == null) viewCount = 0;
@@ -147,5 +151,10 @@ public class Advertisement {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    @Transient
+    public Category getCategory() {
+        return categoryVersion != null ? categoryVersion.getCategory() : null;
     }
 }
