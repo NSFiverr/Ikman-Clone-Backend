@@ -163,7 +163,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         // Create new version for restored category
         CategoryVersion lastVersion = categoryVersionRepository
-                .findByCategoryIdOrderByVersionNumberDesc(id)
+                .findVersionsForCategory(id)
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("No previous version found"));

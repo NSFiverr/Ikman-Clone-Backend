@@ -3,12 +3,15 @@ package com.marketplace.platform.validator.category;
 import com.marketplace.platform.domain.category.Category;
 import com.marketplace.platform.domain.category.CategoryAttribute;
 import com.marketplace.platform.domain.category.CategoryStatus;
+import com.marketplace.platform.domain.category.CategoryVersion;
 import com.marketplace.platform.dto.request.CategoryCreateRequest;
 import com.marketplace.platform.dto.request.CategoryUpdateRequest;
 import com.marketplace.platform.dto.request.CategoryAttributeRequest;
 import com.marketplace.platform.exception.BadRequestException;
+import com.marketplace.platform.exception.ResourceNotFoundException;
 import com.marketplace.platform.repository.category.CategoryRepository;
 import com.marketplace.platform.repository.advertisement.AdvertisementRepository;
+import com.marketplace.platform.repository.category.CategoryVersionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -22,6 +25,8 @@ import java.util.stream.Collectors;
 public class CategoryValidator {
     private final CategoryRepository categoryRepository;
     private final AdvertisementRepository advertisementRepository;
+
+    private final CategoryVersionRepository categoryVersionRepository;
 
     private static final int MAX_DEPTH = 5;
     private static final int MAX_NAME_LENGTH = 100;
@@ -83,15 +88,19 @@ public class CategoryValidator {
     public void validateRestore(Category category) {
         List<String> errors = new ArrayList<>();
 
-        // Check if parent exists and is not deleted
         if (category.getParent() != null &&
                 category.getParent().getStatus() == CategoryStatus.DELETED) {
             errors.add("Cannot restore category because parent category is deleted");
         }
 
-        // Check if name is now taken by another active category
-        if (categoryRepository.existsByNameIgnoreCaseAndCategoryIdNotAndStatusNot(
-                category.getName(), category.getCategoryId(), CategoryStatus.DELETED)) {
+        CategoryVersion currentVersion = categoryVersionRepository
+                .findCurrentVersion(category.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("No version found for category"));
+
+        if (categoryVersionRepository.existsByNameIgnoreCaseAndCategoryIdNotAndStatus(
+                currentVersion.getName(),
+                category.getCategoryId(),
+                CategoryStatus.ACTIVE)) {
             errors.add("Cannot restore category because another active category with the same name exists");
         }
 
@@ -120,23 +129,21 @@ public class CategoryValidator {
     }
 
     private void validateNameUniqueness(String name, Long excludeCategoryId, List<String> errors) {
-        // For category creation , check against ALL categories including deleted ones
         if (excludeCategoryId == null) {
-            if (categoryRepository.existsByNameIgnoreCaseAndStatusNot(name, CategoryStatus.DELETED)) {
+            // For category creation
+            if (categoryVersionRepository.existsByNameIgnoreCaseAndStatusNot(name, CategoryStatus.DELETED)) {
                 errors.add("Category with this name already exists");
             }
-            // Also check deleted categories to inform user
-            if (categoryRepository.existsByNameIgnoreCaseAndStatus(name, CategoryStatus.DELETED)) {
+            if (categoryVersionRepository.existsByNameIgnoreCaseAndStatus(name, CategoryStatus.DELETED)) {
                 errors.add("A deleted category with this name exists. Please restore it or choose a different name");
             }
         } else {
-            // For updates, exclude the current category but check against all others
-            if (categoryRepository.existsByNameIgnoreCaseAndCategoryIdNotAndStatusNot(
-                    name, excludeCategoryId, CategoryStatus.DELETED)) {
+            // For updates
+            if (categoryVersionRepository.existsByNameIgnoreCaseAndCategoryIdNotAndStatus(
+                    name, excludeCategoryId, CategoryStatus.ACTIVE)) {
                 errors.add("Category with this name already exists");
             }
-            // Also check deleted categories except the current one
-            if (categoryRepository.existsByNameIgnoreCaseAndCategoryIdNotAndStatus(
+            if (categoryVersionRepository.existsByNameIgnoreCaseAndCategoryIdNotAndStatus(
                     name, excludeCategoryId, CategoryStatus.DELETED)) {
                 errors.add("A deleted category with this name exists. Please restore it or choose a different name");
             }
@@ -185,7 +192,7 @@ public class CategoryValidator {
             // Validate transition to INACTIVE
             if (newStatus == CategoryStatus.INACTIVE) {
                 // Check for active child categories
-                if (categoryRepository.existsByParentIdAndStatus(
+                if (categoryRepository.existsByParentIdAndStatusCustom(
                         categoryId, CategoryStatus.ACTIVE)) {
                     errors.add("Cannot deactivate category with active child categories");
                 }

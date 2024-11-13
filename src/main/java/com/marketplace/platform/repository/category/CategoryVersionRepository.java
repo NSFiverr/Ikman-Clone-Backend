@@ -32,35 +32,39 @@ public interface CategoryVersionRepository extends JpaRepository<CategoryVersion
     );
 
 
-    List<CategoryVersion> findByCategoryIdOrderByVersionNumberDesc(Long categoryId);
-
-    @Query("SELECT MAX(cv.versionNumber) FROM CategoryVersion cv WHERE cv.category.categoryId = :categoryId")
-    Optional<Integer> findLatestVersionNumber(@Param("categoryId") Long categoryId);
-
-
-    Page<CategoryVersion> findByCategoryIdAndStatus(
-            Long categoryId,
-            CategoryStatus status,
-            Pageable pageable
-    );
-
-
     @Query("SELECT cv FROM CategoryVersion cv " +
             "WHERE cv.category.categoryId = :categoryId " +
-            "AND cv.validTo > CURRENT_TIMESTAMP")
-    List<CategoryVersion> findPendingVersions(@Param("categoryId") Long categoryId);
+            "ORDER BY cv.versionNumber DESC")
+    List<CategoryVersion> findVersionsForCategory(@Param("categoryId") Long categoryId);
 
-    @Query("SELECT cv FROM CategoryVersion cv " +
-            "WHERE cv.category.categoryId = :categoryId " +
-            "AND cv.validFrom < :endTime " +
-            "AND (cv.validTo IS NULL OR cv.validTo > :startTime) " +
-            "AND cv.id <> :excludeVersionId")
-    List<CategoryVersion> findOverlappingVersions(
-            @Param("categoryId") Long categoryId,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("excludeVersionId") Long excludeVersionId
-    );
+
+//    @Query("SELECT MAX(cv.versionNumber) FROM CategoryVersion cv WHERE cv.category.categoryId = :categoryId")
+//    Optional<Integer> findLatestVersionNumber(@Param("categoryId") Long categoryId);
+//
+//
+//    Page<CategoryVersion> findByCategoryIdAndStatus(
+//            Long categoryId,
+//            CategoryStatus status,
+//            Pageable pageable
+//    );
+
+
+//    @Query("SELECT cv FROM CategoryVersion cv " +
+//            "WHERE cv.category.categoryId = :categoryId " +
+//            "AND cv.validTo > CURRENT_TIMESTAMP")
+//    List<CategoryVersion> findPendingVersions(@Param("categoryId") Long categoryId);
+
+//    @Query("SELECT cv FROM CategoryVersion cv " +
+//            "WHERE cv.category.categoryId = :categoryId " +
+//            "AND cv.validFrom < :endTime " +
+//            "AND (cv.validTo IS NULL OR cv.validTo > :startTime) " +
+//            "AND cv.id <> :excludeVersionId")
+//    List<CategoryVersion> findOverlappingVersions(
+//            @Param("categoryId") Long categoryId,
+//            @Param("startTime") LocalDateTime startTime,
+//            @Param("endTime") LocalDateTime endTime,
+//            @Param("excludeVersionId") Long excludeVersionId
+//    );
 
 
     @Query("SELECT DISTINCT cv FROM CategoryVersion cv " +
@@ -69,26 +73,26 @@ public interface CategoryVersionRepository extends JpaRepository<CategoryVersion
             "AND a.status = 'ACTIVE'")
     List<CategoryVersion> findVersionsWithActiveAds(@Param("categoryId") Long categoryId);
 
-    @Query("SELECT COUNT(a) FROM Advertisement a " +
-            "WHERE a.categoryVersion.id = :versionId")
-    long countAdvertisementsUsingVersion(@Param("versionId") Long versionId);
+//    @Query("SELECT COUNT(a) FROM Advertisement a " +
+//            "WHERE a.categoryVersion.id = :versionId")
+//    long countAdvertisementsUsingVersion(@Param("versionId") Long versionId);
 
 
-    @Query("SELECT cv FROM CategoryVersion cv " +
-            "WHERE cv.category.categoryId = :categoryId " +
-            "AND cv.validFrom > CURRENT_TIMESTAMP")
-    List<CategoryVersion> findFutureVersions(@Param("categoryId") Long categoryId);
+//    @Query("SELECT cv FROM CategoryVersion cv " +
+//            "WHERE cv.category.categoryId = :categoryId " +
+//            "AND cv.validFrom > CURRENT_TIMESTAMP")
+//    List<CategoryVersion> findFutureVersions(@Param("categoryId") Long categoryId);
 
 
-    @Query("SELECT cv FROM CategoryVersion cv " +
-            "WHERE cv.category.categoryId = :categoryId " +
-            "AND cv.validFrom <= :endDate " +
-            "AND (cv.validTo IS NULL OR cv.validTo >= :startDate)")
-    List<CategoryVersion> findVersionsActiveBetween(
-            @Param("categoryId") Long categoryId,
-            @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate
-    );
+//    @Query("SELECT cv FROM CategoryVersion cv " +
+//            "WHERE cv.category.categoryId = :categoryId " +
+//            "AND cv.validFrom <= :endDate " +
+//            "AND (cv.validTo IS NULL OR cv.validTo >= :startDate)")
+//    List<CategoryVersion> findVersionsActiveBetween(
+//            @Param("categoryId") Long categoryId,
+//            @Param("startDate") LocalDateTime startDate,
+//            @Param("endDate") LocalDateTime endDate
+//    );
 
 
     @Query("SELECT COUNT(c) > 0 FROM Category c " +
@@ -96,8 +100,41 @@ public interface CategoryVersionRepository extends JpaRepository<CategoryVersion
     boolean hasChildCategories(@Param("categoryId") Long categoryId);
 
 
-    Optional<CategoryVersion> findByCategoryIdAndVersionNumber(
-            Long categoryId,
-            Integer versionNumber
+//    Optional<CategoryVersion> findByCategoryIdAndVersionNumber(
+//            Long categoryId,
+//            Integer versionNumber
+//    );
+
+
+
+
+    @Query("SELECT CASE WHEN COUNT(cv) > 0 THEN true ELSE false END FROM CategoryVersion cv " +
+            "WHERE LOWER(cv.name) = LOWER(:name) " +
+            "AND cv.validTo IS NULL " +
+            "AND cv.category.status <> :excludeStatus")
+    boolean existsByNameIgnoreCaseAndStatusNot(
+            @Param("name") String name,
+            @Param("excludeStatus") CategoryStatus excludeStatus
     );
+
+    @Query("SELECT CASE WHEN COUNT(cv) > 0 THEN true ELSE false END FROM CategoryVersion cv " +
+            "WHERE LOWER(cv.name) = LOWER(:name) " +
+            "AND cv.validTo IS NULL " +
+            "AND cv.category.status = :status")
+    boolean existsByNameIgnoreCaseAndStatus(
+            @Param("name") String name,
+            @Param("status") CategoryStatus status
+    );
+
+    @Query("SELECT CASE WHEN COUNT(cv) > 0 THEN true ELSE false END FROM CategoryVersion cv " +
+            "WHERE LOWER(cv.name) = LOWER(:name) " +
+            "AND cv.category.categoryId <> :categoryId " +
+            "AND cv.validTo IS NULL " +
+            "AND cv.category.status = :status")
+    boolean existsByNameIgnoreCaseAndCategoryIdNotAndStatus(
+            @Param("name") String name,
+            @Param("categoryId") Long categoryId,
+            @Param("status") CategoryStatus status
+    );
+
 }

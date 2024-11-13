@@ -15,14 +15,22 @@ import java.util.Optional;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSpecificationExecutor<Category> {
-    boolean existsByNameIgnoreCaseAndCategoryIdNot(String name, Long categoryId);
-    boolean existsByNameIgnoreCase(String name);
-    boolean existsByParentId(Long parentId);
-    boolean existsByParentIdAndStatus(Long parentId, CategoryStatus status);
-    boolean existsByNameIgnoreCaseAndStatusNot(String name, CategoryStatus status);
-    boolean existsByNameIgnoreCaseAndStatus(String name, CategoryStatus status);
-    boolean existsByNameIgnoreCaseAndCategoryIdNotAndStatusNot(String name, Long categoryId, CategoryStatus status);
-    boolean existsByNameIgnoreCaseAndCategoryIdNotAndStatus(String name, Long categoryId, CategoryStatus status);
+    boolean existsByParentCategoryId(Long parentId);
+
+    boolean existsByParentCategoryIdAndStatus(Long parentId, CategoryStatus status);
+    boolean existsByCategoryIdNotAndStatus(Long categoryId, CategoryStatus status);
+
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Category c " +
+            "WHERE c.parent.categoryId = :parentId")
+    boolean existsByParentId(@Param("parentId") Long parentId);
+
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Category c " +
+            "WHERE c.parent.categoryId = :parentId AND c.status = :status")
+    boolean existsByParentIdAndStatusCustom(
+            @Param("parentId") Long parentId,
+            @Param("status") CategoryStatus status
+    );
+
 
 
 

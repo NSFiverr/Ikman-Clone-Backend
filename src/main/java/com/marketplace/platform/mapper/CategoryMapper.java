@@ -16,16 +16,14 @@ public class CategoryMapper {
 
     public Category toEntity(CategoryCreateRequest request) {
         Category category = new Category();
-        category.setName(request.getName());
-        category.setDescription(request.getDescription());
         return category;
     }
 
     public CategoryResponse toResponse(Category category, CategoryVersion version) {
         return CategoryResponse.builder()
                 .categoryId(category.getCategoryId())
-                .name(version.getName())  // Use version name instead of category name
-                .description(version.getDescription())  // Use version description
+                .name(version.getName())
+                .description(version.getDescription())
                 .treePath(category.getTreePath())
                 .depth(category.getDepth())
                 .parentId(category.getParent() != null ? category.getParent().getCategoryId() : null)
@@ -44,8 +42,8 @@ public class CategoryMapper {
         CategoryUpdateRequest updateRequest = new CategoryUpdateRequest();
         updateRequest.setName(createRequest.getName());
         updateRequest.setDescription(createRequest.getDescription());
-        updateRequest.setStatus(CategoryStatus.ACTIVE); // Default status for new categories
-        updateRequest.setAttributes(createRequest.getAttributes()); // Assuming attributes structure is the same
+        updateRequest.setStatus(CategoryStatus.ACTIVE);
+        updateRequest.setAttributes(createRequest.getAttributes());
         return updateRequest;
     }
 
