@@ -19,7 +19,7 @@ public class AttributeDefinitionCreateRequest {
 
     private Boolean isSearchable = false;
     private Boolean isRequired = false;
-    private String validationRules;
+    private ValidationRules validationRules;
 }
 
 

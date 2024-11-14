@@ -1,5 +1,6 @@
 package com.marketplace.platform.domain.category;
 
+import com.marketplace.platform.dto.request.ValidationRules;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -18,5 +19,7 @@ public class CategoryVersionAttribute {
 
     // Additional useful fields that might be needed
     private String defaultValue;
+
+    @Column(columnDefinition = "TEXT")
     private String validationRules;
 }

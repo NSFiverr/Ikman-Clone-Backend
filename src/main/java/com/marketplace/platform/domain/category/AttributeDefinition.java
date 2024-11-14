@@ -35,7 +35,7 @@ public class AttributeDefinition {
     @Column(name = "is_required")
     private Boolean isRequired;
 
-    @Column(name = "validation_rules", columnDefinition = "JSON")
+    @Column(name = "validation_rules", columnDefinition = "TEXT")
     private String validationRules;
 
     @Column(name = "created_at", nullable = false, updatable = false)

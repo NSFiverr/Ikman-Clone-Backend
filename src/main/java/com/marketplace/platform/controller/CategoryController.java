@@ -9,6 +9,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +39,15 @@ public class CategoryController {
             @ModelAttribute CategorySearchCriteria criteria,
             Pageable pageable) {
         return ResponseEntity.ok(categoryService.getAllCategories(criteria, pageable));
+    }
+
+    @GetMapping("/{id}/versions")
+    public ResponseEntity<Page<CategoryResponse>> getCategoryVersionHistory(
+            @PathVariable Long id,
+            @PageableDefault(size = 10, sort = "versionNumber", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(categoryService.getCategoryVersionHistory(id, pageable));
     }
 
     @PutMapping("/{id}")

@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -37,6 +38,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@CacheConfig(cacheNames = {"users"})
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -60,7 +62,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "userStats", allEntries = true)
+    @CacheEvict(cacheNames = {"users"}, allEntries = true)
     public UserResponse registerUser(@Valid UserRegistrationRequest request) {
         log.debug("Attempting to register new user with email: {}", request.getEmail());
 
@@ -83,7 +85,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Cacheable(value = "users", key = "#email", unless = "#result == null")
+    @Cacheable(cacheNames = "users", key = "#email", unless = "#result == null")
     public Optional<UserResponse> getUserByEmail(String email) {
         log.debug("Fetching user by email: {}", email);
 
@@ -145,7 +147,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {"users", "userStats"}, allEntries = true)
+    @CacheEvict(cacheNames = {"users"}, allEntries = true)
     public UserResponse updateProfile(Long userId, @Valid UpdateProfileRequest request) {
         log.debug("Updating profile for user ID: {}", userId);
 
@@ -172,7 +174,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {"users", "userStats"}, allEntries = true)
+    @CacheEvict(cacheNames = {"users"}, allEntries = true)
     public UserResponse updateUser(Long userId, @Valid UserUpdateRequest request) {
         log.debug("Updating user with ID: {}", userId);
 
@@ -221,7 +223,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {"users", "userStats"}, allEntries = true)
+    @CacheEvict(cacheNames = {"users"}, allEntries = true)
     public void softDeleteUser(Long userId) {
         log.debug("Attempting to soft delete user with ID: {}", userId);
 

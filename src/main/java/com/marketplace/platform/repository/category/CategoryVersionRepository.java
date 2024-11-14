@@ -3,7 +3,9 @@ package com.marketplace.platform.repository.category;
 import com.marketplace.platform.domain.category.CategoryStatus;
 import com.marketplace.platform.domain.category.CategoryVersion;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -22,6 +24,22 @@ public interface CategoryVersionRepository extends JpaRepository<CategoryVersion
             "AND cv.validTo IS NULL")
     Optional<CategoryVersion> findCurrentVersion(@Param("categoryId") Long categoryId);
 
+    Optional<CategoryVersion> findTopByCategoryCategoryIdOrderByVersionNumberDesc(Long categoryId);
+
+
+    @Query("SELECT cv FROM CategoryVersion cv " +
+            "LEFT JOIN FETCH cv.attributes attr " +
+            "LEFT JOIN FETCH attr.attributeDefinition " +
+            "WHERE cv.category.categoryId = :categoryId " +
+            "AND cv.versionNumber = (" +
+            "    SELECT MAX(v.versionNumber) " +
+            "    FROM CategoryVersion v " +
+            "    WHERE v.category.categoryId = :categoryId" +
+            ")")
+    Optional<CategoryVersion> findTopByCategoryCategoryIdWithAttributesOrderByVersionNumberDesc(
+            @Param("categoryId") Long categoryId);
+
+
     @Query("SELECT cv FROM CategoryVersion cv " +
             "WHERE cv.category.categoryId = :categoryId " +
             "AND cv.validFrom <= :timestamp " +
@@ -37,34 +55,23 @@ public interface CategoryVersionRepository extends JpaRepository<CategoryVersion
             "ORDER BY cv.versionNumber DESC")
     List<CategoryVersion> findVersionsForCategory(@Param("categoryId") Long categoryId);
 
-
-//    @Query("SELECT MAX(cv.versionNumber) FROM CategoryVersion cv WHERE cv.category.categoryId = :categoryId")
-//    Optional<Integer> findLatestVersionNumber(@Param("categoryId") Long categoryId);
-//
-//
-//    Page<CategoryVersion> findByCategoryIdAndStatus(
-//            Long categoryId,
-//            CategoryStatus status,
-//            Pageable pageable
-//    );
+    @Query("SELECT cv FROM CategoryVersion cv " +
+            "WHERE cv.category.categoryId = :categoryId " +
+            "AND cv.validTo IS NOT NULL " +
+            "ORDER BY cv.validTo DESC")
+    Page<CategoryVersion> findLastActiveVersion(@Param("categoryId") Long categoryId, Pageable pageable);
 
 
-//    @Query("SELECT cv FROM CategoryVersion cv " +
-//            "WHERE cv.category.categoryId = :categoryId " +
-//            "AND cv.validTo > CURRENT_TIMESTAMP")
-//    List<CategoryVersion> findPendingVersions(@Param("categoryId") Long categoryId);
 
-//    @Query("SELECT cv FROM CategoryVersion cv " +
-//            "WHERE cv.category.categoryId = :categoryId " +
-//            "AND cv.validFrom < :endTime " +
-//            "AND (cv.validTo IS NULL OR cv.validTo > :startTime) " +
-//            "AND cv.id <> :excludeVersionId")
-//    List<CategoryVersion> findOverlappingVersions(
-//            @Param("categoryId") Long categoryId,
-//            @Param("startTime") LocalDateTime startTime,
-//            @Param("endTime") LocalDateTime endTime,
-//            @Param("excludeVersionId") Long excludeVersionId
-//    );
+    @Query("SELECT cv FROM CategoryVersion cv " +
+            "LEFT JOIN FETCH cv.attributes attr " +
+            "LEFT JOIN FETCH attr.attributeDefinition " +
+            "WHERE cv.category.categoryId = :categoryId " +
+            "ORDER BY cv.versionNumber DESC")
+    Page<CategoryVersion> findVersionHistoryByCategory(
+            @Param("categoryId") Long categoryId,
+            Pageable pageable
+    );
 
 
     @Query("SELECT DISTINCT cv FROM CategoryVersion cv " +
@@ -73,39 +80,10 @@ public interface CategoryVersionRepository extends JpaRepository<CategoryVersion
             "AND a.status = 'ACTIVE'")
     List<CategoryVersion> findVersionsWithActiveAds(@Param("categoryId") Long categoryId);
 
-//    @Query("SELECT COUNT(a) FROM Advertisement a " +
-//            "WHERE a.categoryVersion.id = :versionId")
-//    long countAdvertisementsUsingVersion(@Param("versionId") Long versionId);
-
-
-//    @Query("SELECT cv FROM CategoryVersion cv " +
-//            "WHERE cv.category.categoryId = :categoryId " +
-//            "AND cv.validFrom > CURRENT_TIMESTAMP")
-//    List<CategoryVersion> findFutureVersions(@Param("categoryId") Long categoryId);
-
-
-//    @Query("SELECT cv FROM CategoryVersion cv " +
-//            "WHERE cv.category.categoryId = :categoryId " +
-//            "AND cv.validFrom <= :endDate " +
-//            "AND (cv.validTo IS NULL OR cv.validTo >= :startDate)")
-//    List<CategoryVersion> findVersionsActiveBetween(
-//            @Param("categoryId") Long categoryId,
-//            @Param("startDate") LocalDateTime startDate,
-//            @Param("endDate") LocalDateTime endDate
-//    );
-
 
     @Query("SELECT COUNT(c) > 0 FROM Category c " +
             "WHERE c.parent.categoryId = :categoryId")
     boolean hasChildCategories(@Param("categoryId") Long categoryId);
-
-
-//    Optional<CategoryVersion> findByCategoryIdAndVersionNumber(
-//            Long categoryId,
-//            Integer versionNumber
-//    );
-
-
 
 
     @Query("SELECT CASE WHEN COUNT(cv) > 0 THEN true ELSE false END FROM CategoryVersion cv " +
@@ -136,5 +114,31 @@ public interface CategoryVersionRepository extends JpaRepository<CategoryVersion
             @Param("categoryId") Long categoryId,
             @Param("status") CategoryStatus status
     );
+
+    @Query("SELECT cv FROM CategoryVersion cv " +
+            "WHERE cv.category.categoryId = :categoryId " +
+            "AND cv.validTo IS NOT NULL " +  // Get closed versions
+            "AND cv.validTo < (SELECT c.updatedAt FROM Category c WHERE c.categoryId = :categoryId) " +
+            "ORDER BY cv.versionNumber DESC")
+    List<CategoryVersion> findVersionsBeforeDeletion(@Param("categoryId") Long categoryId);
+
+
+
+    @Query("SELECT MAX(cv.versionNumber) FROM CategoryVersion cv " +
+            "WHERE cv.category.categoryId = :categoryId")
+    Optional<Integer> findMaxVersionNumberForCategory(@Param("categoryId") Long categoryId);
+
+    @Query("SELECT cv FROM CategoryVersion cv " +
+            "WHERE cv.category.categoryId = :categoryId " +
+            "AND cv.validTo IS NOT NULL " +
+            "ORDER BY cv.versionNumber DESC")
+    List<CategoryVersion> findPreviousVersions(@Param("categoryId") Long categoryId);
+
+
+    default Optional<CategoryVersion> findLastActiveVersion(Long categoryId) {
+        Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "validTo"));
+        Page<CategoryVersion> result = findLastActiveVersion(categoryId, pageable);
+        return result.getContent().stream().findFirst();
+    }
 
 }

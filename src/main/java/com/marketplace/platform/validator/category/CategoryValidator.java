@@ -88,17 +88,24 @@ public class CategoryValidator {
     public void validateRestore(Category category) {
         List<String> errors = new ArrayList<>();
 
+        // Check parent status
         if (category.getParent() != null &&
                 category.getParent().getStatus() == CategoryStatus.DELETED) {
             errors.add("Cannot restore category because parent category is deleted");
         }
 
-        CategoryVersion currentVersion = categoryVersionRepository
-                .findCurrentVersion(category.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("No version found for category"));
+        // Find the last version before deletion instead of current version
+        CategoryVersion lastVersion = categoryVersionRepository
+                .findVersionsForCategory(category.getCategoryId())
+                .stream()
+                .filter(v -> v.getValidTo() != null)
+                .max(Comparator.comparing(CategoryVersion::getVersionNumber))
+                .orElseThrow(() -> new ResourceNotFoundException("No previous version found for category: " +
+                        category.getCategoryId()));
 
+        // Check for name conflicts with active categories
         if (categoryVersionRepository.existsByNameIgnoreCaseAndCategoryIdNotAndStatus(
-                currentVersion.getName(),
+                lastVersion.getName(),
                 category.getCategoryId(),
                 CategoryStatus.ACTIVE)) {
             errors.add("Cannot restore category because another active category with the same name exists");

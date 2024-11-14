@@ -1,12 +1,17 @@
 package com.marketplace.platform.service.category;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marketplace.platform.domain.category.*;
 import com.marketplace.platform.dto.request.CategoryUpdateRequest;
 import com.marketplace.platform.dto.request.CategoryAttributeRequest;
+import com.marketplace.platform.exception.BadRequestException;
 import com.marketplace.platform.repository.category.CategoryVersionRepository;
 import com.marketplace.platform.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +29,19 @@ public class CategoryVersioningService {
 
     private final CategoryVersionRepository categoryVersionRepository;
     private final AttributeDefinitionService attributeDefinitionService;
+    private final ObjectMapper objectMapper;
 
+    @Cacheable(cacheNames = "category_versions",
+            key = "'v:' + #categoryId")
     public Optional<CategoryVersion> getCategoryCurrentVersion(Long categoryId) {
         return categoryVersionRepository.findCurrentVersion(categoryId);
+    }
+
+
+    @Cacheable(cacheNames = "category_versions",
+            key = "'ve:' + #categoryId")
+    public Optional<CategoryVersion> getCategoryCurrentVersionEager(Long categoryId) {
+        return categoryVersionRepository.findTopByCategoryCategoryIdWithAttributesOrderByVersionNumberDesc(categoryId);
     }
 
     private CategoryVersionAttribute createVersionAttribute(CategoryAttributeRequest attrRequest) {
@@ -37,10 +52,41 @@ public class CategoryVersioningService {
         attribute.setAttributeDefinition(attrDef);
         attribute.setIsRequired(attrRequest.getIsRequired());
         attribute.setDisplayOrder(attrRequest.getDisplayOrder());
+        attribute.setDefaultValue(attrRequest.getDefaultValue());
+        attribute.setValidationRules(attrDef.getValidationRules());
 
         return attribute;
     }
 
+    private CategoryVersionAttribute createVersionAttribute(
+            CategoryAttributeRequest attrRequest,
+            CategoryVersion categoryVersion) {
+
+        AttributeDefinition attrDef = attributeDefinitionService
+                .getAttributeDefinitionById(attrRequest.getAttributeDefinitionId());
+
+        CategoryVersionAttribute attribute = new CategoryVersionAttribute();
+        attribute.setAttributeDefinition(attrDef);
+        attribute.setIsRequired(attrRequest.getIsRequired());
+        attribute.setDisplayOrder(attrRequest.getDisplayOrder());
+        attribute.setDefaultValue(attrRequest.getDefaultValue());
+        attribute.setValidationRules(attrDef.getValidationRules());
+
+//        // Convert ValidationRules object to JSON string
+//        if (attrRequest.getValidationRules() != null) {
+//            try {
+//                String validationRulesJson = objectMapper.writeValueAsString(attrRequest.getValidationRules());
+//                attribute.setValidationRules(validationRulesJson);
+//            } catch (JsonProcessingException e) {
+//                throw new BadRequestException("Error converting validation rules to JSON");
+//            }
+//        }
+
+
+        return attribute;
+    }
+
+    @CacheEvict(cacheNames = "category_versions", allEntries = true)
     @Transactional
     public CategoryVersion createNewVersion(Category category, CategoryUpdateRequest request) {
         // Close current version if exists
@@ -87,5 +133,38 @@ public class CategoryVersioningService {
         if (categoryVersionRepository.hasChildCategories(categoryId)) {
             log.info("Category {} has child categories that may need version updates", categoryId);
         }
+    }
+
+    @Transactional
+    public CategoryVersion createNewVersionWithNumber(
+            Category category,
+            CategoryUpdateRequest request,
+            int versionNumber) {
+
+        categoryVersionRepository.findCurrentVersion(category.getCategoryId()).ifPresent(currentVersion -> {
+            currentVersion.setValidTo(LocalDateTime.now());
+            categoryVersionRepository.save(currentVersion);
+            log.debug("Closed version {} for category {}",
+                    currentVersion.getVersionNumber(), category.getCategoryId());
+        });
+
+        // Create new version
+        CategoryVersion newVersion = new CategoryVersion();
+        newVersion.setCategory(category);
+        newVersion.setName(request.getName());
+        newVersion.setDescription(request.getDescription());
+        newVersion.setStatus(request.getStatus());
+        newVersion.setValidFrom(LocalDateTime.now());
+        newVersion.setVersionNumber(versionNumber);
+
+        // Set attributes if any
+        if (request.getAttributes() != null) {
+            Set<CategoryVersionAttribute> attributes = request.getAttributes().stream()
+                    .map(attr -> createVersionAttribute(attr, newVersion))
+                    .collect(Collectors.toSet());
+            newVersion.setAttributes(attributes);
+        }
+
+        return categoryVersionRepository.save(newVersion);
     }
 }

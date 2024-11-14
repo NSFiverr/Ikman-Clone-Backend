@@ -1,6 +1,7 @@
 package com.marketplace.platform.dto.response;
 
 import com.marketplace.platform.domain.category.FieldType;
+import com.marketplace.platform.dto.request.ValidationRules;
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,5 +14,5 @@ public class CategoryAttributeResponse {
     private Boolean isRequired;
     private Integer displayOrder;
     private String defaultValue;
-    private String validationRules;
+    private ValidationRules validationRules;
 }

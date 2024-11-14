@@ -1,6 +1,7 @@
 package com.marketplace.platform.dto.response;
 
 import com.marketplace.platform.domain.category.FieldType;
+import com.marketplace.platform.dto.request.ValidationRules;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -14,6 +15,6 @@ public class AttributeDefinitionResponse {
     private FieldType dataType;
     private Boolean isSearchable;
     private Boolean isRequired;
-    private String validationRules;
+    private ValidationRules validationRules;
     private LocalDateTime createdAt;
 }

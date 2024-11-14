@@ -1,18 +1,23 @@
 package com.marketplace.platform.mapper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marketplace.platform.domain.category.*;
-import com.marketplace.platform.dto.request.CategoryCreateRequest;
-import com.marketplace.platform.dto.request.CategoryUpdateRequest;
-import com.marketplace.platform.dto.request.CategoryAttributeRequest;
+import com.marketplace.platform.dto.request.*;
 import com.marketplace.platform.dto.response.CategoryResponse;
 import com.marketplace.platform.dto.response.CategoryAttributeResponse;
+import com.marketplace.platform.exception.BadRequestException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class CategoryMapper {
+
+    private final ObjectMapper objectMapper;
 
     public Category toEntity(CategoryCreateRequest request) {
         Category category = new Category();
@@ -63,15 +68,27 @@ public class CategoryMapper {
     }
 
     private CategoryAttributeResponse mapVersionAttributeResponse(CategoryVersionAttribute attribute) {
-        return CategoryAttributeResponse.builder()
-                .attributeDefinitionId(attribute.getAttributeDefinition().getAttrDefId())
-                .attributeName(attribute.getAttributeDefinition().getName())
-                .displayName(attribute.getAttributeDefinition().getDisplayName())
-                .isRequired(attribute.getIsRequired())
-                .displayOrder(attribute.getDisplayOrder())
-                .defaultValue(attribute.getDefaultValue())
-                .validationRules(attribute.getValidationRules())
-                .build();
+        try {
+            ValidationRules validationRules = null;
+            if (attribute.getValidationRules() != null && !attribute.getValidationRules().isEmpty()) {
+                validationRules = objectMapper.readValue(
+                        attribute.getValidationRules(),
+                        ValidationRules.class
+                );
+            }
+
+            return CategoryAttributeResponse.builder()
+                    .attributeDefinitionId(attribute.getAttributeDefinition().getAttrDefId())
+                    .attributeName(attribute.getAttributeDefinition().getName())
+                    .displayName(attribute.getAttributeDefinition().getDisplayName())
+                    .isRequired(attribute.getIsRequired())
+                    .displayOrder(attribute.getDisplayOrder())
+                    .defaultValue(attribute.getDefaultValue())
+                    .validationRules(validationRules)
+                    .build();
+        } catch (JsonProcessingException e) {
+            throw new BadRequestException("Error parsing validation rules: " + e.getMessage());
+        }
     }
 
     private Set<CategoryAttributeRequest> mapToAttributeRequests(Set<CategoryVersionAttribute> attributes) {
@@ -81,12 +98,32 @@ public class CategoryMapper {
     }
 
     private CategoryAttributeRequest mapToAttributeRequest(CategoryVersionAttribute attribute) {
-        return CategoryAttributeRequest.builder()
-                .attributeDefinitionId(attribute.getAttributeDefinition().getAttrDefId())
-                .isRequired(attribute.getIsRequired())
-                .displayOrder(attribute.getDisplayOrder())
-                .defaultValue(attribute.getDefaultValue())
-                .validationRules(attribute.getValidationRules())
-                .build();
+        try {
+            ValidationRules validationRules = null;
+            if (attribute.getValidationRules() != null && !attribute.getValidationRules().isEmpty()) {
+                validationRules = objectMapper.readValue(
+                        attribute.getValidationRules(),
+                        ValidationRules.class
+                );
+            }
+
+            return CategoryAttributeRequest.builder()
+                    .attributeDefinitionId(attribute.getAttributeDefinition().getAttrDefId())
+                    .isRequired(attribute.getIsRequired())
+                    .displayOrder(attribute.getDisplayOrder())
+                    .defaultValue(attribute.getDefaultValue())
+                    .validationRules(validationRules)
+                    .build();
+        } catch (JsonProcessingException e) {
+            throw new BadRequestException("Error parsing validation rules: " + e.getMessage());
+        }
+    }
+
+    private String convertValidationRulesToJson(ValidationRules validationRules) {
+        try {
+            return validationRules != null ? objectMapper.writeValueAsString(validationRules) : null;
+        } catch (JsonProcessingException e) {
+            throw new BadRequestException("Error converting validation rules to JSON: " + e.getMessage());
+        }
     }
 }

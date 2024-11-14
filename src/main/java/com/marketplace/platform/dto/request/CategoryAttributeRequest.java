@@ -11,6 +11,6 @@ public class CategoryAttributeRequest {
     private Boolean isRequired;
     private Integer displayOrder;
     private String defaultValue;
-    private String validationRules;
+    private ValidationRules validationRules;
 }
 
