@@ -8,6 +8,8 @@ import com.marketplace.platform.mapper.AttributeDefinitionMapper;
 import com.marketplace.platform.repository.category.AttributeDefinitionRepository;
 import com.marketplace.platform.validator.category.AttributeDefinitionValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,5 +35,19 @@ public class AttributeDefinitionServiceImpl implements AttributeDefinitionServic
     public AttributeDefinition getAttributeDefinitionById(Long id) {
         return attributeDefinitionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attribute definition not found: " + id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AttributeDefinitionResponse getAttributeDefinitionResponseById(Long id) {
+        AttributeDefinition attributeDefinition = getAttributeDefinitionById(id);
+        return attributeDefinitionMapper.toResponse(attributeDefinition);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AttributeDefinitionResponse> getAllAttributeDefinitions(Pageable pageable) {
+        return attributeDefinitionRepository.findAll(pageable)
+                .map(attributeDefinitionMapper::toResponse);
     }
 }

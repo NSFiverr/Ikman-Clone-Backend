@@ -75,4 +75,14 @@ public class CategoryController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(attributeDefinitionService.createAttributeDefinition(request));
     }
+
+    @GetMapping("/attributes/definitions/{id}")
+    public ResponseEntity<AttributeDefinitionResponse> getAttributeDefinition(@PathVariable Long id) {
+        return ResponseEntity.ok(attributeDefinitionService.getAttributeDefinitionResponseById(id));
+    }
+
+    @GetMapping("/attributes/definitions")
+    public ResponseEntity<Page<AttributeDefinitionResponse>> getAllAttributeDefinitions(Pageable pageable) {
+        return ResponseEntity.ok(attributeDefinitionService.getAllAttributeDefinitions(pageable));
+    }
 }

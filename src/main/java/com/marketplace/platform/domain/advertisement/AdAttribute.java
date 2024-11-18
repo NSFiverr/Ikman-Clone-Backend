@@ -27,10 +27,11 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = {"advertisement", "attributeDefinition"})
+@EqualsAndHashCode(of = "id")
 public class AdAttribute {
     @EmbeddedId
-    private AdAttributeKey id;
+    @Builder.Default
+    private AdAttributeKey id = new AdAttributeKey();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("adId")
@@ -57,4 +58,15 @@ public class AdAttribute {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.id == null) {
+            this.id = new AdAttributeKey();
+        }
+        if (this.advertisement != null && this.attributeDefinition != null) {
+            this.id.setAdId(this.advertisement.getAdId());
+            this.id.setAttrDefId(this.attributeDefinition.getAttrDefId());
+        }
+    }
 }

@@ -29,6 +29,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(exclude = {"mediaItems", "attributes", "favorites", "conversations", "views", "searchIndices"})
 public class Advertisement {
 
     private static final GeometryFactory geometryFactory = new GeometryFactory();

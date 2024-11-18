@@ -109,6 +109,12 @@ server:
     include-message: ${INCLUDE_MESSAGE:never}
     include-binding-errors: ${INCLUDE_BINDING_ERRORS:never}
 
+firebase:
+  storage:
+    bucket: ${FIREBASE_STORAGE_BUCKET}
+  config:
+    path: ${FIREBASE_CONFIG_PATH}
+
 # Logging Configuration
 logging:
   level:

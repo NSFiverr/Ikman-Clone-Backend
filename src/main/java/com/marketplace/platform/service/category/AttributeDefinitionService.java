@@ -9,4 +9,7 @@ import org.springframework.data.domain.Pageable;
 public interface AttributeDefinitionService {
     AttributeDefinitionResponse createAttributeDefinition(AttributeDefinitionCreateRequest request);
      AttributeDefinition getAttributeDefinitionById(Long id);
+
+    AttributeDefinitionResponse getAttributeDefinitionResponseById(Long id);
+    Page<AttributeDefinitionResponse> getAllAttributeDefinitions(Pageable pageable);
 }

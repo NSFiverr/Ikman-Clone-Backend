@@ -45,8 +45,9 @@ public class AdPackage {
     @Column(name = "has_priority_support")
     private Boolean hasPrioritySupport;
 
-    @Column(name = "visibility_level")
-    private String visibilityLevel;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibility_level", nullable = false)
+    private VisibilityLevel visibilityLevel = VisibilityLevel.PUBLIC;
 
     @Column(name = "featured_duration_days")
     private Integer featuredDurationDays;

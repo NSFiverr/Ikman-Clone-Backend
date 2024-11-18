@@ -51,6 +51,9 @@ target/
 .env.test
 .env.production
 
+### FireBase Config ###
+src/main/resources/firebase-service-account.json
+
 #uploads
 /uploads
 

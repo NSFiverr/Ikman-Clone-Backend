@@ -3,11 +3,8 @@ package com.marketplace.platform.domain.advertisement;
 import lombok.Getter;
 
 @Getter
-public enum AdStatus {
-    DRAFT,
-    ACTIVE,
-    SUSPENDED,
-    EXPIRED,
-    DELETED
+public enum VisibilityLevel {
+    PUBLIC,
+    RESTRICTED,
+    HIDDEN
 }
-

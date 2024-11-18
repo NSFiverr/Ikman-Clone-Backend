@@ -1,6 +1,9 @@
 package com.marketplace.platform.repository.advertisement;
 
+import com.marketplace.platform.domain.advertisement.AdStatus;
 import com.marketplace.platform.domain.advertisement.Advertisement;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,4 +22,7 @@ public interface AdvertisementRepository extends JpaRepository<Advertisement, Lo
             "WHERE a.categoryVersion.id = :categoryVersionId " +
             "AND a.status = 'ACTIVE'")
     boolean existsByCategoryVersionIdAndStatusActive(@Param("categoryVersionId") Long categoryVersionId);
+
+    Page<Advertisement> findByStatus(AdStatus status, Pageable pageable);
+    Page<Advertisement> findByUserUserIdAndStatus(Long userId, AdStatus status, Pageable pageable);
 }

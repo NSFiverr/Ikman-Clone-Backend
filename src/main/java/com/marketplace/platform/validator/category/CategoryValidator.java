@@ -158,30 +158,62 @@ public class CategoryValidator {
     }
 
     private void validateAttributes(Set<CategoryAttributeRequest> attributes, List<String> errors) {
-        if (attributes != null) {
-            if (attributes.size() > MAX_ATTRIBUTES) {
-                errors.add("Maximum " + MAX_ATTRIBUTES + " attributes allowed per category");
+        if (attributes == null || attributes.isEmpty()) {
+            errors.add("At least one attribute is required for the category");
+            return;
+        }
+
+        if (attributes.size() > MAX_ATTRIBUTES) {
+            errors.add("Maximum " + MAX_ATTRIBUTES + " attributes allowed per category");
+        }
+
+        Set<Long> attributeIds = new HashSet<>();
+        Map<Integer, CategoryAttributeRequest> displayOrderMap = new HashMap<>();
+
+        for (CategoryAttributeRequest attr : attributes) {
+            // Check for duplicate attributes
+            if (!attributeIds.add(attr.getAttributeDefinitionId())) {
+                errors.add("Duplicate attribute definitions are not allowed");
             }
 
-            Set<Long> attributeIds = new HashSet<>();
-            Set<Integer> displayOrders = new HashSet<>();
+            // Validate display order
+            if (attr.getDisplayOrder() == null) {
+                errors.add("Display order is required for all attributes");
+                continue;
+            }
 
-            for (CategoryAttributeRequest attr : attributes) {
-                // Check for duplicate attributes
-                if (!attributeIds.add(attr.getAttributeDefinitionId())) {
-                    errors.add("Duplicate attribute definitions are not allowed");
-                }
+            // Check display order range
+            if (attr.getDisplayOrder() < 1 || attr.getDisplayOrder() > MAX_ATTRIBUTES) {
+                errors.add("Display order must be between 1 and " + MAX_ATTRIBUTES);
+                continue;
+            }
 
-                // Check for duplicate display orders
-                if (attr.getDisplayOrder() != null && !displayOrders.add(attr.getDisplayOrder())) {
-                    errors.add("Duplicate display orders are not allowed");
-                }
+            // Check for duplicate display orders
+            CategoryAttributeRequest existingAttr = displayOrderMap.put(attr.getDisplayOrder(), attr);
+            if (existingAttr != null) {
+                errors.add(String.format(
+                        "Duplicate display order %d found for attributes with IDs: %d and %d",
+                        attr.getDisplayOrder(),
+                        existingAttr.getAttributeDefinitionId(),
+                        attr.getAttributeDefinitionId()
+                ));
+            }
+        }
 
-                // Validate display order range
-                if (attr.getDisplayOrder() != null &&
-                        (attr.getDisplayOrder() < 1 || attr.getDisplayOrder() > MAX_ATTRIBUTES)) {
-                    errors.add("Display order must be between 1 and " + MAX_ATTRIBUTES);
-                }
+        validateDisplayOrderSequence(attributes, errors);
+    }
+
+    private void validateDisplayOrderSequence(Set<CategoryAttributeRequest> attributes, List<String> errors) {
+        Set<Integer> displayOrders = attributes.stream()
+                .map(CategoryAttributeRequest::getDisplayOrder)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        // Check if display orders form a continuous sequence starting from 1
+        for (int i = 1; i <= attributes.size(); i++) {
+            if (!displayOrders.contains(i)) {
+                errors.add("Display orders must form a continuous sequence starting from 1");
+                break;
             }
         }
     }

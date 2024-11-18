@@ -72,17 +72,6 @@ public class CategoryVersioningService {
         attribute.setDefaultValue(attrRequest.getDefaultValue());
         attribute.setValidationRules(attrDef.getValidationRules());
 
-//        // Convert ValidationRules object to JSON string
-//        if (attrRequest.getValidationRules() != null) {
-//            try {
-//                String validationRulesJson = objectMapper.writeValueAsString(attrRequest.getValidationRules());
-//                attribute.setValidationRules(validationRulesJson);
-//            } catch (JsonProcessingException e) {
-//                throw new BadRequestException("Error converting validation rules to JSON");
-//            }
-//        }
-
-
         return attribute;
     }
 

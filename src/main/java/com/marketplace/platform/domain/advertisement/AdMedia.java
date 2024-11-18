@@ -1,8 +1,8 @@
 package com.marketplace.platform.domain.advertisement;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -11,6 +11,9 @@ import java.util.Set;
 @Entity
 @Table(name = "ad_media")
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
+@EqualsAndHashCode(exclude = "advertisement")
 public class AdMedia {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,16 +43,11 @@ public class AdMedia {
     @Column(name = "display_order")
     private Integer displayOrder;
 
-    @Column(nullable = false)
-    private String status;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-
 
     @PrePersist
     protected void onCreate() {
@@ -62,4 +60,3 @@ public class AdMedia {
         updatedAt = LocalDateTime.now();
     }
 }
-
