@@ -1,6 +1,7 @@
 package com.marketplace.platform.service.admin;
 
 import com.marketplace.platform.dto.request.AdminCreationRequest;
+import com.marketplace.platform.dto.request.AdminDeletionRequest;
 import com.marketplace.platform.dto.request.AdminSearchCriteria;
 import com.marketplace.platform.dto.request.UpdateAdminRequest;
 import com.marketplace.platform.dto.response.AdminResponse;
@@ -20,4 +21,7 @@ public interface AdminService {
 
 
     AdminResponse updateAdmin(Long adminId, UpdateAdminRequest updateAdminRequest);
+
+    void deleteAdmin(Long adminId, AdminDeletionRequest request, Long deletedBy);
+
 }

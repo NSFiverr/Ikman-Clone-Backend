@@ -1,13 +1,18 @@
 package com.marketplace.platform.service.admin;
 
 import com.marketplace.platform.domain.admin.Admin;
+import com.marketplace.platform.domain.admin.AdminType;
+import com.marketplace.platform.domain.audit.AdminAuditLog;
 import com.marketplace.platform.dto.request.AdminCreationRequest;
+import com.marketplace.platform.dto.request.AdminDeletionRequest;
 import com.marketplace.platform.dto.request.AdminSearchCriteria;
 import com.marketplace.platform.dto.request.UpdateAdminRequest;
 import com.marketplace.platform.dto.response.AdminResponse;
 import com.marketplace.platform.exception.ResourceNotFoundException;
+import com.marketplace.platform.exception.UnauthorizedOperationException;
 import com.marketplace.platform.mapper.AdminMapper;
 import com.marketplace.platform.repository.admin.AdminRepository;
+import com.marketplace.platform.repository.audit.AdminAuditLogRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Objects;
 @Service
@@ -27,6 +33,8 @@ public class AdminServiceImpl implements AdminService {
     private final AdminRepository adminRepository;
     private final AdminMapper adminMapper;
     private final PasswordEncoder passwordEncoder;
+    private final AdminAuditLogRepository auditLogRepository;
+
 
 
     @Override
@@ -134,8 +142,42 @@ public class AdminServiceImpl implements AdminService {
         return adminMapper.toResponse(updatedAdmin);
     }
 
+    @Override
+    @Transactional
+    public void deleteAdmin(Long adminId, AdminDeletionRequest request, Long deletedBy) {
+        // Get the admin who is performing the deletion
+        Admin performer = adminRepository.findById(deletedBy)
+                .orElseThrow(() -> new ResourceNotFoundException("Performing admin not found"));
 
+        // Check if the performer is a SUPER_ADMIN
+        if (performer.getAdminType() != AdminType.SUPER_ADMIN) {
+            throw new UnauthorizedOperationException("Only super admins can delete other admins");
+        }
 
+        // Get the admin to be deleted
+        Admin adminToDelete = adminRepository.findById(adminId)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin to delete not found"));
 
+        // Prevent deletion of own account
+        if (adminToDelete.getAdminId().equals(deletedBy)) {
+            throw new UnauthorizedOperationException("Admins cannot delete their own accounts");
+        }
 
+        // Create audit log
+        AdminAuditLog auditLog = adminMapper.toAuditLog(
+                adminToDelete,
+                "ADMIN_DELETED",
+                deletedBy,
+                request.getReason()
+        );
+
+        // Soft delete the admin
+        adminToDelete.setDeleted(true);
+        adminToDelete.setDeletedAt(LocalDateTime.now());
+        adminToDelete.setDeletedBy(deletedBy);
+
+        // Save both the audit log and the updated admin
+        auditLogRepository.save(auditLog);
+        adminRepository.save(adminToDelete);
+    }
 }

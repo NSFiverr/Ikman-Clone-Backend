@@ -1,6 +1,7 @@
 package com.marketplace.platform.controller;
 
 import com.marketplace.platform.dto.request.AdminCreationRequest;
+import com.marketplace.platform.dto.request.AdminDeletionRequest;
 import com.marketplace.platform.dto.request.AdminSearchCriteria;
 import com.marketplace.platform.dto.request.UpdateAdminRequest;
 import com.marketplace.platform.dto.response.AdminResponse;
@@ -48,6 +49,15 @@ public class AdminController {
             @Valid @RequestBody UpdateAdminRequest updateAdminRequest) {
         AdminResponse updatedAdmin = adminService.updateAdmin(adminId, updateAdminRequest);
         return ResponseEntity.ok(updatedAdmin);
+    }
+
+    @DeleteMapping("/{adminId}")
+    public ResponseEntity<Void> deleteAdmin(
+            @PathVariable Long adminId,
+            @Valid @RequestBody AdminDeletionRequest request,
+            @RequestAttribute("currentAdminId") Long currentAdminId) {
+        adminService.deleteAdmin(adminId, request, currentAdminId);
+        return ResponseEntity.noContent().build();
     }
 
 }
