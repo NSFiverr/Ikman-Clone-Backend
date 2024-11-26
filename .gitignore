@@ -44,6 +44,19 @@ target/
 *.iml
 *.ipr
 
+### Environment Files ###
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+### FireBase Config ###
+src/main/resources/firebase-service-account.json
+
+#uploads
+/uploads
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
