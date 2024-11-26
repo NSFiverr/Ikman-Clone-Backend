@@ -38,8 +38,8 @@ public class Admin {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "admin_type", nullable = false)
-    private AdminType adminType;
+    @Column(name = "role", nullable = false)
+    private Role role;  // This replaces adminType
 
     @Column(name = "permissions")
     private String permissions;

@@ -1,7 +1,7 @@
 package com.marketplace.platform.controller;
 
 
-import com.marketplace.platform.domain.admin.AdminType;
+import com.marketplace.platform.domain.admin.Role;
 import com.marketplace.platform.exception.BadRequestException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.marketplace.platform.dto.request.AdminCreationRequest;
@@ -45,7 +45,7 @@ public class AdminController {
     public ResponseEntity<AdminResponse> createAdmin(
             @Valid @RequestBody AdminCreationRequest adminCreationRequest) {
         // Validate that SUPER_ADMIN can't create another SUPER_ADMIN
-       if (adminCreationRequest.getAdminType() == AdminType.SUPER_ADMIN) {
+       if (adminCreationRequest.getRole() == Role.SUPER_ADMIN) {
             throw new BadRequestException("Cannot create another SUPER_ADMIN");
        }
 

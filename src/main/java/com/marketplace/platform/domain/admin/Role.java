@@ -1,6 +1,7 @@
 package com.marketplace.platform.domain.admin;
 
-public enum AdminType {
+public enum Role {
     SUPER_ADMIN,
-    ADMIN
+    ADMIN,
+
 }

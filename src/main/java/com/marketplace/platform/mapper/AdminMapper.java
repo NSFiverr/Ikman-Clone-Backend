@@ -20,7 +20,7 @@ public class AdminMapper {
         return Admin.builder()
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .adminType(request.getAdminType())
+                .role(request.getRole())
                 .permissions(request.getPermissions())
                 .build();
     }
@@ -29,7 +29,7 @@ public class AdminMapper {
         return AdminResponse.builder()
                 .adminId(admin.getAdminId())
                 .email(admin.getEmail())
-                .adminType(admin.getAdminType())
+                .role(admin.getRole())
                 .permissions(admin.getPermissions())
                 .lastAccessAt(admin.getLastAccessAt())
                 .createdAt(admin.getCreatedAt())
@@ -51,7 +51,7 @@ public class AdminMapper {
                 "Admin[id=%d, email=%s, type=%s, permissions=%s, createdAt=%s]",
                 admin.getAdminId(),
                 admin.getEmail(),
-                admin.getAdminType(),
+                admin.getRole(),
                 admin.getPermissions(),
                 admin.getCreatedAt()
         );

@@ -1,7 +1,7 @@
 package com.marketplace.platform.service.admin;
 
 import com.marketplace.platform.domain.admin.Admin;
-import com.marketplace.platform.domain.admin.AdminType;
+import com.marketplace.platform.domain.admin.Role;
 import com.marketplace.platform.domain.audit.AdminAuditLog;
 import com.marketplace.platform.dto.request.AdminCreationRequest;
 import com.marketplace.platform.dto.request.AdminDeletionRequest;
@@ -62,8 +62,8 @@ public class AdminServiceImpl implements AdminService {
                             "%" + criteria.getEmail().toLowerCase() + "%"));
                 }
 
-                if (criteria.getAdminType() != null) {
-                    predicates.add(cb.equal(root.get("adminType"), criteria.getAdminType()));
+                if (criteria.getRole() != null) {
+                    predicates.add(cb.equal(root.get("role"), criteria.getRole()));
                 }
 
                 if (criteria.getCreatedAfter() != null) {
@@ -102,6 +102,8 @@ public class AdminServiceImpl implements AdminService {
         // Create admin entity using mapper
         Admin admin = adminMapper.toEntity(adminCreationRequest);
 
+        admin.setPasswordHash(passwordEncoder.encode(adminCreationRequest.getPassword()));
+
         // Save admin
         Admin savedAdmin = adminRepository.save(admin);
 
@@ -130,8 +132,8 @@ public class AdminServiceImpl implements AdminService {
         if (updateAdminRequest.getPassword() != null) {
             admin.setPasswordHash(passwordEncoder.encode(updateAdminRequest.getPassword()));
         }
-        if (updateAdminRequest.getAdminType() != null) {
-            admin.setAdminType(updateAdminRequest.getAdminType());
+        if (updateAdminRequest.getRole() != null) {
+            admin.setRole(updateAdminRequest.getRole());
         }
         if (updateAdminRequest.getPermissions() != null) {
             admin.setPermissions(updateAdminRequest.getPermissions());
@@ -149,7 +151,7 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Performing admin not found"));
 
         // Check if the performer is a SUPER_ADMIN
-        if (performer.getAdminType() != AdminType.SUPER_ADMIN) {
+        if (performer.getRole() != Role.SUPER_ADMIN) {
             throw new UnauthorizedOperationException("Only super admins can delete other admins");
         }
 

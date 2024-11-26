@@ -1,7 +1,7 @@
 package com.marketplace.platform.repository.admin;
 
 import com.marketplace.platform.domain.admin.Admin;
-import com.marketplace.platform.domain.admin.AdminType;
+import com.marketplace.platform.domain.admin.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -22,10 +22,10 @@ public interface AdminRepository extends JpaRepository<Admin, Long>, JpaSpecific
     Optional<Admin> findByEmail(String email);
 
     // Find admins by type
-    List<Admin> findByAdminType(AdminType adminType);
+    List<Admin> findByRole(Role role);
 
     // Find admins by type and sorted by creation date
-    List<Admin> findByAdminTypeOrderByCreatedAtDesc(AdminType adminType);
+    List<Admin> findByRoleOrderByCreatedAtDesc(Role role);
 
     // Check if email exists
     boolean existsByEmail(String email);
@@ -56,5 +56,5 @@ public interface AdminRepository extends JpaRepository<Admin, Long>, JpaSpecific
     List<Admin> findByPermissionContaining(@Param("permission") String permission);
 
     // Count admins by type
-    long countByAdminType(AdminType adminType);
+    long countByRole(Role role);
 }

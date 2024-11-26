@@ -1,6 +1,6 @@
 package com.marketplace.platform.dto.request;
 
-import com.marketplace.platform.domain.admin.AdminType;
+import com.marketplace.platform.domain.admin.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,8 +25,8 @@ public class AdminCreationRequest {
             message = "Password must be at least 8 characters long and contain both letters and numbers")
     private String password;
 
-    @NotNull(message = "Admin type is required")
-    private AdminType adminType;
+    @NotNull(message = "Role is required")
+    private Role role;  // Changed from AdminType to Role
 
     private String permissions;
 }

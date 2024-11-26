@@ -30,7 +30,7 @@ public class JwtService {
     public String generateAdminAccessToken(Admin admin) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("adminId", admin.getAdminId());
-        claims.put("adminType", admin.getAdminType().toString());
+        claims.put("adminType", admin.getRole().toString());
         claims.put("permissions", admin.getPermissions());
         claims.put("tokenType", "ACCESS");
         claims.put("role", "ADMIN");

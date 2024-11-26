@@ -1,7 +1,7 @@
 package com.marketplace.platform.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.marketplace.platform.domain.admin.AdminType;
+import com.marketplace.platform.domain.admin.Role;
 import com.marketplace.platform.domain.user.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,7 +22,7 @@ public class AuthenticationResponse {
         private Long expiresIn;
         private Long adminId;
         private String email;
-        private AdminType adminType;
+        private Role role;
         private String permissions;
     }
 

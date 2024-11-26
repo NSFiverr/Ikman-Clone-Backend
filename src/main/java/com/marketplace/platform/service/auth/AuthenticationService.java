@@ -87,7 +87,7 @@ public class AuthenticationService {
                 .expiresIn(jwtProperties.getAccessTokenValidity() / 1000)
                 .adminId(admin.getAdminId())
                 .email(admin.getEmail())
-                .adminType(admin.getAdminType())
+                .role(admin.getRole())
                 .permissions(admin.getPermissions())
                 .build();
     }

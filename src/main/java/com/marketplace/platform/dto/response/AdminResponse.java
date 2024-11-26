@@ -1,6 +1,6 @@
 package com.marketplace.platform.dto.response;
 
-import com.marketplace.platform.domain.admin.AdminType;
+import com.marketplace.platform.domain.admin.Role;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class AdminResponse {
     private Long adminId;
     private String email;
-    private AdminType adminType;
+    private Role role;
     private String permissions;
     private LocalDateTime lastAccessAt;
     private LocalDateTime createdAt;

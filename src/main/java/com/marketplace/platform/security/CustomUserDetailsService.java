@@ -1,7 +1,7 @@
 package com.marketplace.platform.security;
 
 import com.marketplace.platform.domain.admin.Admin;
-import com.marketplace.platform.domain.admin.AdminType;
+import com.marketplace.platform.domain.admin.Role;
 import com.marketplace.platform.repository.admin.AdminRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -26,7 +26,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
-        if (admin.getAdminType() == AdminType.SUPER_ADMIN) {
+        if (admin.getRole() == Role.SUPER_ADMIN) {
             authorities.add(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"));
             authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN")); // SUPER_ADMIN also has ADMIN role
         } else {
