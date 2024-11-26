@@ -1,10 +1,15 @@
 package com.marketplace.platform.controller;
 
+
+import com.marketplace.platform.domain.admin.AdminType;
+import com.marketplace.platform.exception.BadRequestException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.marketplace.platform.dto.request.AdminCreationRequest;
 import com.marketplace.platform.dto.request.AdminDeletionRequest;
 import com.marketplace.platform.dto.request.AdminSearchCriteria;
 import com.marketplace.platform.dto.request.UpdateAdminRequest;
 import com.marketplace.platform.dto.response.AdminResponse;
+
 import com.marketplace.platform.service.admin.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +24,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/admins")
 @RequiredArgsConstructor
 public class AdminController {
-
     private final AdminService adminService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Page<AdminResponse>> getAdmin(
             @ModelAttribute AdminSearchCriteria criteria,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -30,13 +35,20 @@ public class AdminController {
     }
 
     @GetMapping("/{adminId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<AdminResponse> getAdminById(@PathVariable Long adminId) {
         return ResponseEntity.ok(adminService.getAdminById(adminId));
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<AdminResponse> createAdmin(
             @Valid @RequestBody AdminCreationRequest adminCreationRequest) {
+        // Validate that SUPER_ADMIN can't create another SUPER_ADMIN
+       if (adminCreationRequest.getAdminType() == AdminType.SUPER_ADMIN) {
+            throw new BadRequestException("Cannot create another SUPER_ADMIN");
+       }
+
         AdminResponse createdAdmin = adminService.createAdmin(adminCreationRequest);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -44,6 +56,7 @@ public class AdminController {
     }
 
     @PutMapping("/{adminId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<AdminResponse> updateAdmin(
             @PathVariable Long adminId,
             @Valid @RequestBody UpdateAdminRequest updateAdminRequest) {
@@ -52,6 +65,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/{adminId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> deleteAdmin(
             @PathVariable Long adminId,
             @Valid @RequestBody AdminDeletionRequest request,
@@ -59,5 +73,4 @@ public class AdminController {
         adminService.deleteAdmin(adminId, request, currentAdminId);
         return ResponseEntity.noContent().build();
     }
-
 }

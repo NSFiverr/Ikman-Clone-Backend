@@ -36,7 +36,6 @@ public class AdminServiceImpl implements AdminService {
     private final AdminAuditLogRepository auditLogRepository;
 
 
-
     @Override
     @Transactional(readOnly = true)
     public Page<AdminResponse> getAdmin(AdminSearchCriteria criteria, Pageable pageable) {

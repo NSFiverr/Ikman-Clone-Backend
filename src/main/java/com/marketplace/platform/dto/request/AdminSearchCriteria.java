@@ -19,4 +19,12 @@ public class AdminSearchCriteria {
     private LocalDateTime createdAfter;
     private LocalDateTime createdBefore;
     private String permissions;
+
+    public boolean hasNoFilters() {
+        return (email == null || email.isEmpty()) &&
+                adminType == null &&
+                createdAfter == null &&
+                createdBefore == null &&
+                (permissions == null || permissions.isEmpty());
+    }
 }

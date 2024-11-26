@@ -1,4 +1,6 @@
 spring:
+  application:
+    name:marketplace-platform
   # Database Configuration
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:marketplace}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -53,6 +55,11 @@ spring:
     suffix: .html
     cache: false
 
+  # Security Configuration
+  security:
+    jwt:
+      enabled: true
+
 # Application Specific Configuration
 app:
   # Email Settings
@@ -71,9 +78,18 @@ app:
     instagram: ${SOCIAL_INSTAGRAM:https://instagram.com/yourmarketplace}
 
   # JWT Configuration
+  #jwt:
+#    secret: ${JWT_SECRET}
+#    # expiration-in-ms: ${JWT_EXPIRATION:86400000}
+#    access-token-validity: ${ACCESS_TOKEN_EXPIRATION}
+#    refresh-token-validity: ${REFRESH_TOKEN_EXPIRATION}
+#    issuer: ${JWT_ISSUER:marketplace-platform}
+
   jwt:
-    secret: ${JWT_SECRET}
-    expiration-in-ms: ${JWT_EXPIRATION:86400000}
+    secret: ${JWT_SECRET:5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437}
+    issuer: ${JWT_ISSUER:marketplace-platform}
+    access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:3600000}  # 1 hour in milliseconds
+    refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:86400000} # 24 hours in milliseconds
 
   token:
     verification:

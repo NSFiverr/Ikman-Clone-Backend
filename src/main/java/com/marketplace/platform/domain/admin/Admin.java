@@ -54,7 +54,7 @@ public class Admin {
     private LocalDateTime updatedAt;
 
     @Column(name = "is_deleted")
-    private boolean deleted = false;
+    private Boolean deleted = false;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
