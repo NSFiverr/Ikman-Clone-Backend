@@ -1,0 +1,83 @@
+package com.marketplace.platform.domain.admin;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Data
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "admins", indexes = {
+        @Index(name = "idx_admin_email", columnList = "email"),
+        @Index(name = "idx_admin_role", columnList = "role")
+})
+public class Admin {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "admin_id")
+    private Long adminId;
+
+    @Email
+    @NotBlank
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @NotBlank
+    @Column(name = "first_name", nullable = false)
+    private String firstName;
+
+    @NotBlank
+    @Column(name = "last_name", nullable = false)
+    private String lastName;
+
+    @NotBlank
+    @ToString.Exclude
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role;
+
+    @Column(name = "permissions")
+    private String permissions;
+
+    @Column(name = "is_password_changed", nullable = false)
+    private Boolean isPasswordChanged = false;
+
+    @Column(name = "last_access_at")
+    private LocalDateTime lastAccessAt;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Column(name = "is_deleted")
+    private Boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+}

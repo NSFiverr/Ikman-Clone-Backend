@@ -53,8 +53,19 @@ spring:
     suffix: .html
     cache: false
 
+  # Security Configuration
+  security:
+    jwt:
+      enabled: true
+
 # Application Specific Configuration
 app:
+  # Super Admin Settings
+  admin:
+    email: ${SUPER_ADMIN_EMAIL:superadmin@yourplatform.com}
+    password: ${SUPER_ADMIN_PASSWORD:changeme}
+    firstName: ${SUPER_ADMIN_FIRST_NAME:System}
+    lastName: ${SUPER_ADMIN_LAST_NAME:Administrator}
   # Email Settings
   email:
     from: ${APP_EMAIL_FROM}
@@ -72,8 +83,14 @@ app:
 
   # JWT Configuration
   jwt:
-    secret: ${JWT_SECRET}
-    expiration-in-ms: ${JWT_EXPIRATION:86400000}
+#    secret: ${JWT_SECRET}
+#    expiration-in-ms: ${JWT_EXPIRATION:86400000}
+    secret: ${JWT_SECRET:5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437}
+    issuer: ${JWT_ISSUER:marketplace-platform}
+    access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:3600000}  # 1 hour in milliseconds
+    short-refresh-token-validity: ${JWT_REFRESH_TOKEN_SHORT_VALIDITY:86400000} # 24 hours in milliseconds
+    long-refresh-token-validity: ${JWT_REFRESH_TOKEN_LONG_VALIDITY:2592000000} # 30 days
+    cookie-name: refreshToken
 
   token:
     verification:

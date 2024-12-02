@@ -6,6 +6,7 @@ import lombok.Getter;
 public enum AdStatus {
     DRAFT,
     ACTIVE,
+    PENDING_REVIEW,
     SUSPENDED,
     EXPIRED,
     DELETED

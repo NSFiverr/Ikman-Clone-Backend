@@ -26,10 +26,9 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.email = :email AND u.status <> :deletedStatus")
     boolean existsByEmail(@Param("email") String email, @Param("deletedStatus") UserStatus deletedStatus);
 
-    // Optimized search with status check and fetch join
+    // Optimized search with status check
     @Query("""
         SELECT DISTINCT u FROM User u 
-        LEFT JOIN FETCH u.userRoles
         WHERE (:term IS NULL OR 
               LOWER(u.firstName) LIKE LOWER(CONCAT('%', :term, '%')) OR 
               LOWER(u.lastName) LIKE LOWER(CONCAT('%', :term, '%')) OR 
@@ -63,10 +62,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
             Pageable pageable
     );
 
-    // Role-based queries with fetch join
-    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.userRoles r WHERE r.roleName = :roleName AND u.status <> :deletedStatus")
-    List<User> findByRole(@Param("roleName") String roleName, @Param("deletedStatus") UserStatus deletedStatus);
-
     // Advertisement-based queries
     @Query("SELECT u FROM User u WHERE SIZE(u.advertisements) >= :minCount AND u.status <> :deletedStatus")
     List<User> findUsersWithMinimumAds(@Param("minCount") int minCount, @Param("deletedStatus") UserStatus deletedStatus);
@@ -85,7 +80,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     // Favorites queries with optimization
     @Query("""
         SELECT DISTINCT u FROM User u 
-        LEFT JOIN FETCH u.userRoles 
         JOIN u.favorites f 
         WHERE f.advertisement.adId = :adId AND u.status <> :deletedStatus
         """)
@@ -97,10 +91,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.status = :status")
     long countByStatus(@Param("status") UserStatus status);
-
-    // Category-related queries
-    @Query("SELECT DISTINCT u FROM User u WHERE SIZE(u.createdCategories) > 0 AND u.status <> :deletedStatus")
-    List<User> findUsersWhoCreatedCategories(@Param("deletedStatus") UserStatus deletedStatus);
 
     // Activity and notification queries
     @Query("""
@@ -139,7 +129,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         """)
     int softDeleteUnverifiedUsersOlderThan(@Param("date") LocalDateTime date, @Param("deletedStatus") UserStatus deletedStatus);
 
-
     @Query("""
         SELECT COUNT(DISTINCT u) FROM User u 
         WHERE u.status <> :deletedStatus 
@@ -156,4 +145,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         )
         """)
     List<User> findUsersWithNoActiveAds(@Param("deletedStatus") UserStatus deletedStatus);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt >= :date")
+    long countByCreatedAtAfter(@Param("date") LocalDateTime date);
 }

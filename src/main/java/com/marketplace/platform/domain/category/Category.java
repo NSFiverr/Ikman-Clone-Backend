@@ -1,5 +1,6 @@
 package com.marketplace.platform.domain.category;
 
+import com.marketplace.platform.domain.admin.Admin;
 import com.marketplace.platform.domain.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -24,7 +25,7 @@ public class Category {
     // Basic metadata
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
-    private User createdBy;
+    private Admin createdBy;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

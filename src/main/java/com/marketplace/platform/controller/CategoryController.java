@@ -24,9 +24,11 @@ public class CategoryController {
 
     @PostMapping
     public ResponseEntity<CategoryResponse> createCategory(
-            @Valid @RequestBody CategoryCreateRequest request) {
+            @Valid @RequestBody CategoryCreateRequest request,
+            @RequestHeader("Authorization") String accessToken
+            ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(categoryService.createCategory(request));
+                .body(categoryService.createCategory(request,accessToken));
     }
 
     @GetMapping("/{id}")
@@ -39,6 +41,12 @@ public class CategoryController {
             @ModelAttribute CategorySearchCriteria criteria,
             Pageable pageable) {
         return ResponseEntity.ok(categoryService.getAllCategories(criteria, pageable));
+    }
+
+    @GetMapping("/deleted")
+    public ResponseEntity<Page<CategoryResponse>> getDeletedCategories(
+            @PageableDefault(sort = "updatedAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(categoryService.getDeletedCategories(pageable));
     }
 
     @GetMapping("/{id}/versions")

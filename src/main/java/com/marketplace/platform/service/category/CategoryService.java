@@ -16,9 +16,11 @@ import java.util.Set;
 
 public interface CategoryService {
     // Core CRUD operations
-    CategoryResponse createCategory(CategoryCreateRequest request);
+    CategoryResponse createCategory(CategoryCreateRequest request, String token);
     CategoryResponse getCategory(Long id);
     Page<CategoryResponse> getAllCategories(CategorySearchCriteria criteria, Pageable pageable);
+
+    public Page<CategoryResponse> getDeletedCategories(Pageable pageable);
 
     Page<CategoryResponse> getCategoryVersionHistory(Long categoryId, Pageable pageable);
 

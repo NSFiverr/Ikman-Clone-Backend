@@ -81,6 +81,7 @@ public class CategoryMapper {
                     .attributeDefinitionId(attribute.getAttributeDefinition().getAttrDefId())
                     .attributeName(attribute.getAttributeDefinition().getName())
                     .displayName(attribute.getAttributeDefinition().getDisplayName())
+                    .dataType(attribute.getAttributeDefinition().getDataType())
                     .isRequired(attribute.getIsRequired())
                     .displayOrder(attribute.getDisplayOrder())
                     .defaultValue(attribute.getDefaultValue())

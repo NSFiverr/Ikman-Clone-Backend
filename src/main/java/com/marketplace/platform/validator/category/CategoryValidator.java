@@ -70,9 +70,11 @@ public class CategoryValidator {
     public void validateDeletion(Category category) {
         List<String> errors = new ArrayList<>();
 
-        // Check for child categories
-        if (category.hasChildren()) {
-            errors.add("Cannot delete category with child categories. Please delete or move child categories first.");
+        // Check for child categories that are not deleted
+        if (categoryRepository.existsByParentIdAndStatusNot(
+                category.getCategoryId(),
+                CategoryStatus.DELETED)) {
+            errors.add("Cannot delete category with active or inactive child categories. Please delete them first.");
         }
 
         // Check for active advertisements
@@ -87,6 +89,17 @@ public class CategoryValidator {
 
     public void validateRestore(Category category) {
         List<String> errors = new ArrayList<>();
+
+        // Check if there's already an active version
+        Optional<CategoryVersion> activeVersion = categoryVersionRepository
+                .findVersionsForCategory(category.getCategoryId())
+                .stream()
+                .filter(v -> v.getValidTo() == null && v.getStatus() == CategoryStatus.ACTIVE)
+                .findFirst();
+
+        if (activeVersion.isPresent()) {
+            errors.add("Cannot restore category as it already has an active version");
+        }
 
         // Check parent status
         if (category.getParent() != null &&
@@ -226,6 +239,11 @@ public class CategoryValidator {
             // Cannot change status of deleted category
             if (category.getStatus() == CategoryStatus.DELETED) {
                 errors.add("Cannot update status of deleted category");
+            }
+
+            // Prevent setting status to DELETED via update
+            if (newStatus == CategoryStatus.DELETED) {
+                errors.add("Cannot set status to DELETED. Use the delete endpoint instead");
             }
 
             // Validate transition to INACTIVE

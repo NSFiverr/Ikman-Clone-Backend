@@ -23,9 +23,11 @@ public class CacheConfig {
                 "users",
                 "categories",
                 "category_versions",
+                "deleted_categories",
                 "category_lists",
                 "adPackages",
-                "activeAdPackages"
+                "activeAdPackages",
+                "advertisements"
         ));
         cacheManager.setCaffeine(caffeineCacheBuilder());
         return cacheManager;

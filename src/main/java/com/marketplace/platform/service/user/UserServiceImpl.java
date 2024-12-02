@@ -7,11 +7,13 @@ import com.marketplace.platform.domain.user.UserStatus;
 import com.marketplace.platform.dto.request.*;
 import com.marketplace.platform.dto.response.UserResponse;
 import com.marketplace.platform.exception.*;
+import com.marketplace.platform.mapper.UserMapper;
 import com.marketplace.platform.repository.token.PasswordResetTokenRepository;
 import com.marketplace.platform.repository.token.VerificationTokenRepository;
 import com.marketplace.platform.repository.user.UserRepository;
 import com.marketplace.platform.service.email.EmailService;
 import com.marketplace.platform.service.storage.FileStorageService;
+import com.marketplace.platform.validator.user.UserValidator;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,8 @@ public class UserServiceImpl implements UserService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     private final FileStorageService fileStorageService;
+    private final UserMapper userMapper;
+    private final UserValidator userValidator;
 
     @Value("${app.token.verification.expiration-minutes}")
     private int verificationTokenExpirationMinutes;
@@ -57,7 +61,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserById(Long userId) {
         log.debug("Fetching user by ID: {}", userId);
-        return mapToUserResponse(findUserById(userId));
+        return userMapper.toResponse(findUserById(userId));
     }
 
     @Override
@@ -66,7 +70,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse registerUser(@Valid UserRegistrationRequest request) {
         log.debug("Attempting to register new user with email: {}", request.getEmail());
 
-        validateRegistrationRequest(request);
+        userValidator.validateRegistrationRequest(request);
 
         try {
             User user = createUserFromRequest(request);
@@ -76,7 +80,7 @@ public class UserServiceImpl implements UserService {
             sendVerificationEmail(savedUser, verificationToken);
 
             log.info("Successfully registered new user with ID: {}", savedUser.getUserId());
-            return mapToUserResponse(savedUser);
+            return userMapper.toResponse((savedUser));
 
         } catch (Exception e) {
             log.error("Failed to register user with email: {}", request.getEmail(), e);
@@ -88,14 +92,10 @@ public class UserServiceImpl implements UserService {
     @Cacheable(cacheNames = "users", key = "#email", unless = "#result == null")
     public Optional<UserResponse> getUserByEmail(String email) {
         log.debug("Fetching user by email: {}", email);
-
-        if (!StringUtils.hasText(email)) {
-            throw new ValidationException("Email cannot be empty");
-        }
-
+        userValidator.validateEmail(email);
         try {
             return userRepository.findByEmail(email, UserStatus.DELETED)
-                    .map(this::mapToUserResponse);
+                    .map(userMapper::toResponse);
         } catch (Exception e) {
             log.error("Error fetching user by email: {}", email, e);
             throw new ServiceException("Error retrieving user", e);
@@ -112,18 +112,14 @@ public class UserServiceImpl implements UserService {
     public void verifyEmail(String token) {
         log.debug("Attempting to verify email with token: {}", token);
 
-        if (!StringUtils.hasText(token)) {
-            throw new ValidationException("Verification token cannot be empty");
-        }
+        userValidator.validateEmailVerificationToken(token);
 
         try {
             VerificationToken verificationToken = verificationTokenRepository.findValidToken(token)
                     .orElseThrow(() -> new TokenException("Invalid or expired verification token"));
 
             User user = verificationToken.getUser();
-            if (user.getIsEmailVerified()) {
-                throw new ValidationException("Email is already verified");
-            }
+            userValidator.validateUserEmailNotVerified(user);
 
             user.setIsEmailVerified(true);
             user.setStatus(UserStatus.ACTIVE);
@@ -155,13 +151,14 @@ public class UserServiceImpl implements UserService {
 
         try {
             User user = findUserById(userId);
-            validateEmailUniqueness(request.getEmail(), user);
+            userValidator.validateProfileUpdate(request);
+            userValidator.validateEmailUniqueness(request.getEmail(), user);
 
             updateUserProfile(user, request);
             User updatedUser = userRepository.save(user);
 
             log.info("Successfully updated profile for user ID: {}", userId);
-            return mapToUserResponse(updatedUser);
+            return userMapper.toResponse(updatedUser);
 
         } catch (ValidationException e) {
             log.warn("Profile update validation failed for user ID: {}", userId, e);
@@ -183,7 +180,7 @@ public class UserServiceImpl implements UserService {
 
             // Validate and check email uniqueness if email is being updated
             if (StringUtils.hasText(request.getEmail())) {
-                validateEmailUniqueness(request.getEmail(), user);
+                userValidator.validateEmailUniqueness(request.getEmail(), user);
             }
 
             // Update user fields
@@ -207,7 +204,7 @@ public class UserServiceImpl implements UserService {
             User updatedUser = userRepository.save(user);
 
             log.info("Successfully updated user with ID: {}", userId);
-            return mapToUserResponse(updatedUser);
+            return userMapper.toResponse(updatedUser);
 
         } catch (ResourceNotFoundException e) {
             log.warn("Update failed - User not found with ID: {}", userId);
@@ -229,26 +226,15 @@ public class UserServiceImpl implements UserService {
 
         try {
             User user = findUserById(userId);
+            userValidator.validateUserNotDeleted(user);
 
-            if (user.getStatus() == UserStatus.DELETED) {
-                throw new ValidationException("User is already deleted");
-            }
+            cleanupUserData(user);
 
             user.setStatus(UserStatus.DELETED);
-            // Append timestamp to email to allow reuse of the email in future
             user.setEmail(user.getEmail() + "_deleted_" + System.currentTimeMillis());
             user.setUpdatedAt(LocalDateTime.now());
 
             userRepository.save(user);
-
-
-            verificationTokenRepository.invalidateExistingTokens(user);
-            passwordResetTokenRepository.invalidateExistingTokens(user);
-
-            if (StringUtils.hasText(user.getProfileImagePath())) {
-                fileStorageService.deleteFile(user.getProfileImagePath());
-            }
-
             log.info("Successfully soft deleted user with ID: {}", userId);
 
         } catch (ResourceNotFoundException e) {
@@ -336,10 +322,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void resetPassword(String token, String newPassword) {
         log.debug("Resetting password with token");
-
-        if (!StringUtils.hasText(newPassword)) {
-            throw new ValidationException("New password cannot be empty");
-        }
+        userValidator.validatePasswordReset(token, newPassword);
 
         PasswordResetToken resetToken = passwordResetTokenRepository
                 .findByTokenAndExpiresAtAfter(token, LocalDateTime.now())
@@ -366,14 +349,7 @@ public class UserServiceImpl implements UserService {
         log.debug("Changing password for user ID: {}", userId);
 
         User user = findUserById(userId);
-
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
-            throw new ValidationException("Current password is incorrect");
-        }
-
-        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new ValidationException("New password and confirm password do not match");
-        }
+        userValidator.validatePasswordChange(user, request);
 
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
@@ -432,7 +408,7 @@ public class UserServiceImpl implements UserService {
         try {
             LocalDateTime cutoffDate = LocalDateTime.now().minusDays(inactiveDays);
             Page<User> usersPage = userRepository.findByLastLoginAtBefore(cutoffDate, UserStatus.DELETED, pageable);
-            return usersPage.map(this::mapToUserResponse);
+            return usersPage.map(userMapper::toResponse);
         } catch (Exception e) {
             log.error("Error fetching inactive users", e);
             throw new ServiceException("Failed to fetch inactive users", e);
@@ -446,7 +422,7 @@ public class UserServiceImpl implements UserService {
 
         try {
             Page<User> usersPage = userRepository.findUsersWithUnreadNotifications(UserStatus.DELETED, pageable);
-            return usersPage.map(this::mapToUserResponse);
+            return usersPage.map(userMapper::toResponse);
         } catch (Exception e) {
             log.error("Error fetching users with unread notifications", e);
             throw new ServiceException("Failed to fetch users with unread notifications", e);
@@ -466,7 +442,7 @@ public class UserServiceImpl implements UserService {
                     criteria.getEndDate() != null ? LocalDateTime.parse(criteria.getEndDate()) : null,
                     UserStatus.DELETED,
                     pageable
-            ).map(this::mapToUserResponse);
+            ).map(userMapper::toResponse);
         } catch (IllegalArgumentException e) {
             log.error("Invalid search criteria: {}", criteria, e);
             throw new ValidationException("Invalid search criteria provided");
@@ -496,7 +472,7 @@ public class UserServiceImpl implements UserService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phone(request.getPhone())
-                .status(UserStatus.ACTIVE)
+                .status(UserStatus.PENDING)
                 .isEmailVerified(false)
                 .build();
     }
@@ -577,17 +553,19 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private UserResponse mapToUserResponse(User user) {
-        return UserResponse.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .phone(user.getPhone())
-                .profileImage(user.getProfileImagePath())
-                .status(user.getStatus().name())
-                .isEmailVerified(user.getIsEmailVerified())
-                .createdAt(user.getCreatedAt())
-                .build();
+    private void cleanupUserData(User user) {
+        // Invalidate tokens
+        verificationTokenRepository.invalidateExistingTokens(user);
+        passwordResetTokenRepository.invalidateExistingTokens(user);
+
+        // Delete profile image if exists
+        if (StringUtils.hasText(user.getProfileImagePath())) {
+            fileStorageService.deleteFile(user.getProfileImagePath());
+        }
+
+        // Note: Related entities like advertisements, favorites, etc.
+        // should be handled through cascade settings in the User entity
+        // if you are going to delete them after user has been soft deleted
     }
+
 }

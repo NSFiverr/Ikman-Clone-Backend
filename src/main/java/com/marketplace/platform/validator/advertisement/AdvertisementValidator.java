@@ -29,6 +29,11 @@ public class AdvertisementValidator {
             "image/jpeg", "image/png"
     );
 
+    // add more words as needed
+    private static final Set<String> FLAGGED_WORDS = Set.of(
+            "scam", "illegal", "fake", "counterfeit", "replica",
+            "prescription", "stolen", "drugs", "weapon", "hack");
+
     public void validateCreateRequest(AdvertisementCreateRequest request) {
         validateBasicFields(request);
         validateCategory(request);
@@ -244,5 +249,19 @@ public class AdvertisementValidator {
         if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
             throw new BadRequestException("Invalid image type. Allowed: " + String.join(", ", ALLOWED_IMAGE_TYPES));
         }
+    }
+
+    private boolean containsFlaggedContent(String content) {
+        String lowerContent = content.toLowerCase();
+        return FLAGGED_WORDS.stream()
+                .anyMatch(word -> lowerContent.contains(word.toLowerCase()));
+    }
+
+    public AdStatus validateContentAndGetStatus(AdvertisementCreateRequest request) {
+        String contentToCheck = (request.getTitle() + " " +
+                (request.getDescription() != null ? request.getDescription() : "")).toLowerCase();
+
+        return containsFlaggedContent(contentToCheck) ?
+                AdStatus.PENDING_REVIEW : AdStatus.ACTIVE;
     }
 }

@@ -21,7 +21,7 @@ import java.util.Optional;
 public class UserController {
     private final UserService userService;
 
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody UserRegistrationRequest request) {
         return new ResponseEntity<>(userService.registerUser(request), HttpStatus.CREATED);
     }
@@ -78,7 +78,7 @@ public class UserController {
     @PostMapping("/verify/resend")
     public ResponseEntity<Void> resendVerificationToken(@RequestParam String email) {
         userService.resendVerificationToken(email);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{userId}/profile")

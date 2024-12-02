@@ -88,10 +88,6 @@ public class User {
     }
 
     // Relationships from User
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @Builder.Default
-    private Set<UserRole> userRoles = new HashSet<>();
-
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<Advertisement> advertisements = new HashSet<>();
@@ -112,9 +108,6 @@ public class User {
     @Builder.Default
     private Set<ConversationParticipant> conversations = new HashSet<>();
 
-    @OneToMany(mappedBy = "createdBy")
-    @Builder.Default
-    private Set<Category> createdCategories = new HashSet<>();
 
     @OneToMany(mappedBy = "user")
     @ToString.Exclude

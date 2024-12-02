@@ -32,6 +32,7 @@ public class AdPackageValidator {
 
     public void validateUpdateRequest(Long id, AdPackageCreateRequest request) {
         validateBasicFields(request);
+        validatePackageNameForUpdate(request.getName(), id);
         validateFeaturedSettings(request);
         validatePricing(request.getPrice());
         validatePackageStatus(id);
@@ -78,6 +79,21 @@ public class AdPackageValidator {
         }
 
         if (adPackageRepository.existsByNameAndVisible(trimmedName)) {
+            throw new BadRequestException("Package with this name already exists");
+        }
+    }
+
+    private void validatePackageNameForUpdate(String name, Long packageId) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new BadRequestException("Package name is required");
+        }
+
+        String trimmedName = name.trim();
+        if (trimmedName.length() < 3) {
+            throw new BadRequestException("Package name must be at least 3 characters");
+        }
+
+        if (adPackageRepository.existsByNameAndVisibleExcludingId(trimmedName, packageId)) {
             throw new BadRequestException("Package with this name already exists");
         }
     }
@@ -139,17 +155,10 @@ public class AdPackageValidator {
     }
 
     private void validateActiveAdvertisements(Long id) {
-        AdPackage adPackage = adPackageRepository.findById(id)
-                .orElseThrow(() -> new BadRequestException("Package not found"));
-
-        if (!adPackage.getAdvertisements().isEmpty()) {
-            long activeAds = adPackage.getAdvertisements().stream()
-                    .filter(ad -> ad.getStatus() == AdStatus.ACTIVE)
-                    .count();
-
-            if (activeAds > 0) {
-                throw new BadRequestException("Cannot delete package with " + activeAds + " active advertisements");
-            }
+        long activeAds = adPackageRepository.countActiveAdvertisementsByPackageId(id);
+        if (activeAds > 0) {
+            throw new BadRequestException("Cannot delete package with " + activeAds + " active advertisement/s. " +
+                    "Please deactivate all advertisements first.");
         }
     }
 }

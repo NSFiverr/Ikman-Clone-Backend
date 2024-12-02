@@ -11,6 +11,7 @@ public class CategoryAttributeResponse {
     private Long attributeDefinitionId;
     private String attributeName;
     private String displayName;
+    private FieldType dataType;
     private Boolean isRequired;
     private Integer displayOrder;
     private String defaultValue;

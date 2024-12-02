@@ -20,6 +20,19 @@ public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSp
     boolean existsByParentCategoryIdAndStatus(Long parentId, CategoryStatus status);
     boolean existsByCategoryIdNotAndStatus(Long categoryId, CategoryStatus status);
 
+    Page<Category> findAllByStatus(CategoryStatus status, Pageable pageable);
+
+
+
+
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Category c " +
+            "WHERE c.parent.categoryId = :parentId AND c.status != :status")
+    boolean existsByParentIdAndStatusNot(
+            @Param("parentId") Long parentId,
+            @Param("status") CategoryStatus status
+    );
+
+
     @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Category c " +
             "WHERE c.parent.categoryId = :parentId")
     boolean existsByParentId(@Param("parentId") Long parentId);
@@ -33,6 +46,19 @@ public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSp
 
 
 
+    @Query("SELECT c FROM Category c " +
+            "JOIN FETCH c.versions v " +
+            "WHERE v.versionNumber = (" +
+            "    SELECT MAX(v2.versionNumber) " +
+            "    FROM CategoryVersion v2 " +
+            "    WHERE v2.category = c " +
+            ") " +
+            "AND v.status = :status " +
+            "ORDER BY c.updatedAt DESC")
+    Page<Category> findByLatestVersionStatus(
+            @Param("status") CategoryStatus status,
+            Pageable pageable
+    );
 
 
 

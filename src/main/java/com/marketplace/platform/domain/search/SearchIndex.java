@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_search_date", columnList = "attr_def_id,date_value"),
                 @Index(name = "idx_search_text", columnList = "search_vector")
 
-                // TODO: @Index(name = "idx_search_geo", columnList = "geo_value", columnDefinition = "SPATIAL"),
+                //  @Index(name = "idx_search_geo", columnList = "geo_value", columnDefinition = "SPATIAL"),
         }
 )
 @Data

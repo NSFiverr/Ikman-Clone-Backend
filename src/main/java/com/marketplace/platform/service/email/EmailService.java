@@ -30,6 +30,35 @@ public class EmailService {
     @Value("${app.email.support")
     private String supportEmail;
 
+
+
+    public void sendAdminCredentials(String email, String firstName, String tempPassword) throws MessagingException {
+        Context context = new Context();
+        context.setVariable("firstName", firstName);
+        context.setVariable("email", email);
+        context.setVariable("tempPassword", tempPassword);
+        context.setVariable("loginUrl", frontendUrl + "/admin/login");
+        context.setVariable("changePasswordUrl", frontendUrl + "/admin/change-password");
+        context.setVariable("supportEmail", supportEmail);
+
+        sendEmail(email,
+                "Your Admin Account Credentials",
+                "email/admin-credentials-email",
+                context);
+    }
+
+    public void sendAdminPasswordChangeNotification(String to, String firstName) throws MessagingException {
+        Context context = new Context();
+        context.setVariable("firstName", firstName);
+        context.setVariable("loginUrl", frontendUrl + "/admin/login");
+        context.setVariable("supportEmail", supportEmail);
+
+        sendEmail(to,
+                "Admin Password Changed Successfully",
+                "email/admin-password-change-email",
+                context);
+    }
+
     public void sendWelcomeEmail(String to, String firstName) throws MessagingException {
         Context context = new Context();
         context.setVariable("firstName", firstName);

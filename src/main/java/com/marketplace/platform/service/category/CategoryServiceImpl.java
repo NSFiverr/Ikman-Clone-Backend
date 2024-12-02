@@ -1,15 +1,18 @@
     package com.marketplace.platform.service.category;
 
+    import com.marketplace.platform.domain.admin.Admin;
     import com.marketplace.platform.domain.category.*;
     import com.marketplace.platform.domain.user.User;
     import com.marketplace.platform.dto.request.*;
     import com.marketplace.platform.dto.response.CategoryResponse;
     import com.marketplace.platform.exception.BadRequestException;
     import com.marketplace.platform.mapper.CategoryMapper;
+    import com.marketplace.platform.repository.admin.AdminRepository;
     import com.marketplace.platform.repository.category.CategoryRepository;
     import com.marketplace.platform.exception.ResourceNotFoundException;
     import com.marketplace.platform.repository.category.CategoryVersionRepository;
     import com.marketplace.platform.repository.category.specification.CategorySpecification;
+    import com.marketplace.platform.service.auth.JwtService;
     import com.marketplace.platform.validator.category.CategoryValidator;
     import lombok.RequiredArgsConstructor;
     import lombok.extern.slf4j.Slf4j;
@@ -24,6 +27,7 @@
 
     import java.time.LocalDateTime;
     import java.util.Comparator;
+    import java.util.Optional;
 
     @Slf4j
     @Service
@@ -36,20 +40,23 @@
         private final CategoryValidator categoryValidator;
         private final CategoryVersioningService categoryVersioningService;
 
+        private final JwtService jwtService;
+
+
         @Override
         @Transactional
         @CacheEvict(cacheNames = {"categories", "category_lists", "category_versions"}, allEntries = true)
-        public CategoryResponse createCategory(CategoryCreateRequest request) {
+        public CategoryResponse createCategory(CategoryCreateRequest request, String token) {
             categoryValidator.validateCreateRequest(request);
 
-            Category category = createCategoryEntity(request);
+            Category category = createCategoryEntity(request, token);
 
             CategoryVersion initialVersion = categoryVersioningService.createNewVersion(category, categoryMapper.toUpdateRequest(request));
 
             return categoryMapper.toResponse(category, initialVersion);
         }
 
-        private Category createCategoryEntity(CategoryCreateRequest request) {
+        private Category createCategoryEntity(CategoryCreateRequest request, String token) {
             Category parent = null;
             if (request.getParentId() != null) {
                 parent = categoryRepository.findById(request.getParentId())
@@ -60,10 +67,16 @@
             Category category = categoryMapper.toEntity(request);
             category.setParent(parent);
 
-            // TODO: Replace with actual user from security context
-            User dummyUser = new User();
-            dummyUser.setUserId(1L);
-            category.setCreatedBy(dummyUser);
+            Optional<Admin> optionalAdmin = jwtService.getAdminFromToken(token);
+
+            optionalAdmin.ifPresentOrElse(
+                    admin -> category.setCreatedBy(admin),
+                    () -> { // Handle the case where the admin is not found
+                        log.error("Admin not found in the repository for the given access token");
+                        throw new ResourceNotFoundException("Admin not found");
+                    }
+            );
+
 
             category.setStatus(CategoryStatus.ACTIVE);
 
@@ -104,6 +117,25 @@
                     log.error("Error getting current version for category {}: {}", category.getCategoryId(), e.getMessage());
                     throw new RuntimeException("Error processing category response", e);
                 }
+            });
+        }
+
+        @Override
+        @Cacheable(cacheNames = "category_lists",
+                key = "'deleted:' + T(java.util.Objects).hash(#pageable)")
+        public Page<CategoryResponse> getDeletedCategories(Pageable pageable) {
+            Page<Category> deletedCategories = categoryRepository.findByLatestVersionStatus(
+                    CategoryStatus.DELETED,
+                    pageable
+            );
+
+            return deletedCategories.map(category -> {
+                CategoryVersion latestVersion = category.getVersions().stream()
+                        .max(Comparator.comparing(CategoryVersion::getVersionNumber))
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "No version found for category: " + category.getCategoryId()
+                        ));
+                return categoryMapper.toResponse(category, latestVersion);
             });
         }
 

@@ -5,6 +5,7 @@ import com.marketplace.platform.domain.advertisement.Advertisement;
 import com.marketplace.platform.domain.advertisement.MediaType;
 import com.marketplace.platform.dto.request.MediaRequest;
 import com.marketplace.platform.exception.BadRequestException;
+import com.marketplace.platform.repository.advertisement.AdMediaRepository;
 import com.marketplace.platform.service.storage.FirebaseStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ import java.util.stream.IntStream;
 public class AdMediaService {
 
     private final FirebaseStorageService firebaseStorageService;
+    private final AdMediaRepository adMediaRepository;
     private static final String BASE_DIRECTORY = "advertisements";
 
     public Set<AdMedia> uploadMediaBatch(
@@ -138,6 +140,10 @@ public class AdMediaService {
     private String getFileExtension(String filename) {
         return filename != null ?
                 filename.substring(filename.lastIndexOf(".")) : "";
+    }
+
+    public void deleteAdMediaFromDB(AdMedia media){
+        adMediaRepository.delete(media);
     }
 
 

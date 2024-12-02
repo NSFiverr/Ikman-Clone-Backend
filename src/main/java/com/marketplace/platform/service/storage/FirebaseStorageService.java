@@ -39,7 +39,7 @@ public class FirebaseStorageService {
             URL signedUrl = storage.signUrl(blobInfo, 3650, TimeUnit.DAYS);
 
             log.info("File uploaded successfully. Path: {}", path);
-            return path; // Return the path instead of URL for easier deletion
+            return path;
         } catch (Exception e) {
             log.error("Failed to upload file", e);
             throw new IOException("Failed to upload file", e);

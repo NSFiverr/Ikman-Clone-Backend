@@ -23,7 +23,7 @@ import java.util.Set;
 @Table(name = "advertisements", indexes = {
         @Index(name = "idx_ads_status_category", columnList = "ad_status,category_version_id"),
         @Index(name = "idx_ads_price", columnList = "price"),
-//       Todo :  @Index(name = "idx_ads_location", columnList = "location_coordinates")
+//      @Index(name = "idx_ads_location", columnList = "location_coordinates")
 })
 @Data
 @Builder
