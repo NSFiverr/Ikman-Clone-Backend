@@ -72,7 +72,7 @@ public class UserController {
     @GetMapping("/verify")
     public ResponseEntity<String> verifyEmail(@RequestParam String token) {
         userService.verifyEmail(token);
-        return ResponseEntity.ok("Email verified successfully");
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/verify/resend")
@@ -96,19 +96,6 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/password/reset-request")
-    public ResponseEntity<Void> initiatePasswordReset(@RequestParam String email) {
-        userService.initiatePasswordReset(email);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/password/reset")
-    public ResponseEntity<Void> resetPassword(
-            @RequestParam String token,
-            @RequestParam String newPassword) {
-        userService.resetPassword(token, newPassword);
-        return ResponseEntity.ok().build();
-    }
 
     @PatchMapping("/{userId}/password")
     public ResponseEntity<Void> changePassword(

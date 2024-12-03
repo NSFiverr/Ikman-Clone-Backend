@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -61,7 +62,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         Set<String> uploadedPaths = new HashSet<>();
 
         try {
-            CategoryVersion categoryVersion = categoryVersioningService.getCategoryCurrentVersion(request.getCategoryId())
+            CategoryVersion categoryVersion = categoryVersioningService.getCategoryCurrentVersionEager(request.getCategoryId())
                     .orElseThrow(() -> new BadRequestException("Invalid category"));
 
             AdPackage adPackage = adPackageRepository.findById(request.getPackageId())
@@ -357,6 +358,9 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         criteria.validateAndClean(); // Clean and validate input
 
+        LocalDateTime postedAfterDate = parseDate(criteria.getPostedAfter());
+        LocalDateTime postedBeforeDate = parseDate(criteria.getPostedBefore());
+
         if (criteria.hasLocationCriteria()) {
             return advertisementRepository.findNearbyAdvertisements(
                     criteria.getLatitude(),
@@ -375,8 +379,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
                     criteria.getTopAdsOnly(),
                     criteria.getSellerId(),
                     criteria.getMinViewCount(),
-                    criteria.getPostedAfter(),
-                    criteria.getPostedBefore(),
+                    postedAfterDate,
+                    postedBeforeDate,
                     criteria.getExcludeAdIds(),
                     criteria.getSortBy(),
                     criteria.getSortDirection(),
@@ -399,8 +403,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
                 criteria.getTopAdsOnly(),
                 criteria.getSellerId(),
                 criteria.getMinViewCount(),
-                criteria.getPostedAfter(),
-                criteria.getPostedBefore(),
+                postedAfterDate,
+                postedBeforeDate,
                 criteria.getExcludeAdIds(),
                 criteria.getSortBy(),
                 criteria.getSortDirection(),
@@ -417,7 +421,10 @@ public class AdvertisementServiceImpl implements AdvertisementService {
             AdvertisementSearchCriteria criteria,
             Pageable pageable) {
 
-        criteria.validateAndClean(); // Use the existing validation method
+        criteria.validateAndClean();
+
+        LocalDateTime postedAfterDate = parseDate(criteria.getPostedAfter());
+        LocalDateTime postedBeforeDate = parseDate(criteria.getPostedBefore());
 
         return advertisementRepository.findNearbyAdvertisements(
                 criteria.getLatitude(),
@@ -436,8 +443,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
                 criteria.getTopAdsOnly(),
                 criteria.getSellerId(),
                 criteria.getMinViewCount(),
-                criteria.getPostedAfter(),
-                criteria.getPostedBefore(),
+                postedAfterDate,
+                postedBeforeDate,
                 criteria.getExcludeAdIds(),
                 criteria.getSortBy(),
                 criteria.getSortDirection(),
@@ -545,5 +552,23 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         }
 
         return builder.build();
+    }
+
+    private LocalDateTime parseDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            dateStr = dateStr.trim();
+            // If it's just a date (no time)
+            if (dateStr.length() <= 10) {
+                return LocalDate.parse(dateStr).atStartOfDay();
+            }
+            // If it's a full datetime
+            return LocalDateTime.parse(dateStr);
+        } catch (Exception e) {
+            log.error("Error parsing date: {} - {}", dateStr, e.getMessage());
+            throw new BadRequestException("Invalid date format: " + dateStr);
+        }
     }
 }

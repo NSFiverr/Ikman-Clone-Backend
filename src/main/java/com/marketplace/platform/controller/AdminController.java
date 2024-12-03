@@ -23,10 +23,10 @@ public class AdminController {
     private final AdminService adminService;
 
     @GetMapping
-    public ResponseEntity<Page<AdminResponse>> getAdmin(
+    public ResponseEntity<Page<AdminResponse>> getAdmins(
             @ModelAttribute AdminSearchCriteria criteria,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(adminService.getAdmin(criteria, pageable));
+        return ResponseEntity.ok(adminService.getAdmins(criteria, pageable));
     }
 
     @GetMapping("/{adminId}")
@@ -55,12 +55,12 @@ public class AdminController {
     public ResponseEntity<Void> deleteAdmin(
             @PathVariable Long adminId,
             @RequestParam String reason,
-            @RequestAttribute("currentAdminId") Long currentAdminId) {
+            @RequestHeader("Authorization") String accessToken) {
 
         AdminDeletionRequest request = new AdminDeletionRequest();
         request.setReason(reason);
 
-        adminService.deleteAdmin(adminId, request, currentAdminId);
+        adminService.deleteAdmin(adminId, request, accessToken);
         return ResponseEntity.noContent().build();
     }
 

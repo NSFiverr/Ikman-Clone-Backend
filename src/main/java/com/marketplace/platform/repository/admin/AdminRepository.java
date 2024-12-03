@@ -2,6 +2,8 @@ package com.marketplace.platform.repository.admin;
 
 import com.marketplace.platform.domain.admin.Admin;
 import com.marketplace.platform.domain.admin.Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -15,6 +17,11 @@ import java.util.Optional;
 
 @Repository
 public interface AdminRepository extends JpaRepository<Admin, Long>, JpaSpecificationExecutor<Admin> {
+
+    @Query("SELECT a FROM Admin a WHERE a.deleted = false")
+    Page<Admin> findActive(Pageable pageable);
+
+
 
     // Find admin by email
     Optional<Admin> findByEmail(String email);
@@ -52,6 +59,14 @@ public interface AdminRepository extends JpaRepository<Admin, Long>, JpaSpecific
     // Find admins with specific permissions
     @Query("SELECT a FROM Admin a WHERE a.permissions LIKE %:permission%")
     List<Admin> findByPermissionContaining(@Param("permission") String permission);
+
+    // Get all admins including deleted ones (for audit purposes)
+    @Query("SELECT a FROM Admin a")
+    List<Admin> findAllIncludingDeleted();
+
+    // Get count of all active admins
+    @Query("SELECT COUNT(a) FROM Admin a WHERE a.deleted IS NULL OR a.deleted = false")
+    long countActive();
 
     // Count admins by type
     long countByRole(Role role);

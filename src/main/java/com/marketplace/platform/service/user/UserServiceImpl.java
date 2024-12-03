@@ -54,8 +54,6 @@ public class UserServiceImpl implements UserService {
     @Value("${app.token.verification.expiration-minutes}")
     private int verificationTokenExpirationMinutes;
 
-    @Value("${app.token.password-reset.expiration-minutes}")
-    private int passwordResetTokenExpirationMinutes;
 
 
     @Override
@@ -286,65 +284,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void initiatePasswordReset(String email) {
-        log.debug("Initiating password reset for email: {}", email);
-
-        User user = userRepository.findByEmail(email, UserStatus.DELETED)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        // Invalidate existing tokens
-        passwordResetTokenRepository.invalidateExistingTokens(user);
-
-        // Create new reset token
-        String tokenString = UUID.randomUUID().toString();
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(tokenString)
-                .user(user)
-                .expiresAt(LocalDateTime.now().plusMinutes(passwordResetTokenExpirationMinutes))
-                .build();
-
-        passwordResetTokenRepository.save(resetToken);
-
-        try {
-            emailService.sendPasswordResetEmail(
-                    user.getEmail(),
-                    tokenString,
-                    user.getFirstName()
-            );
-            log.info("Successfully sent password reset email to: {}", email);
-        } catch (MessagingException e) {
-            log.error("Failed to send password reset email to: {}", email, e);
-            throw new EmailException("Failed to send password reset email");
-        }
-    }
-
-    @Override
-    @Transactional
-    public void resetPassword(String token, String newPassword) {
-        log.debug("Resetting password with token");
-        userValidator.validatePasswordReset(token, newPassword);
-
-        PasswordResetToken resetToken = passwordResetTokenRepository
-                .findByTokenAndExpiresAtAfter(token, LocalDateTime.now())
-                .orElseThrow(() -> new TokenException("Invalid or expired password reset token"));
-
-        User user = resetToken.getUser();
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        // Invalidate all reset tokens
-        passwordResetTokenRepository.invalidateExistingTokens(user);
-
-        try {
-            emailService.sendPasswordChangeNotification(user.getEmail(), user.getFirstName());
-            log.info("Successfully reset password for user: {}", user.getEmail());
-        } catch (MessagingException e) {
-            log.error("Failed to send password change confirmation email to: {}", user.getEmail(), e);
-        }
-    }
-
-    @Override
-    @Transactional
     public void changePassword(Long userId, ChangePasswordRequest request) {
         log.debug("Changing password for user ID: {}", userId);
 
@@ -556,7 +495,7 @@ public class UserServiceImpl implements UserService {
     private void cleanupUserData(User user) {
         // Invalidate tokens
         verificationTokenRepository.invalidateExistingTokens(user);
-        passwordResetTokenRepository.invalidateExistingTokens(user);
+        passwordResetTokenRepository.invalidateExistingUserTokens(user);
 
         // Delete profile image if exists
         if (StringUtils.hasText(user.getProfileImagePath())) {

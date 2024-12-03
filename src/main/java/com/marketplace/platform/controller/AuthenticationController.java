@@ -10,10 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -57,6 +54,20 @@ public class AuthenticationController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         authenticationService.logout();
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/password/reset-request")
+    public ResponseEntity<Void> initiatePasswordReset(@RequestParam String email) {
+        authenticationService.initiatePasswordReset(email);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/password/reset")
+    public ResponseEntity<Void> resetPassword(
+            @RequestParam String token,
+            @RequestParam String newPassword) {
+        authenticationService.resetPassword(token, newPassword);
         return ResponseEntity.noContent().build();
     }
 }

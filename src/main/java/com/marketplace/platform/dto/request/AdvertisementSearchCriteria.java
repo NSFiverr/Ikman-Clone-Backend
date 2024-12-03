@@ -38,10 +38,8 @@ public class AdvertisementSearchCriteria {
     private ItemCondition condition;
 
     // Date filters
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    private LocalDateTime postedAfter;
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    private LocalDateTime postedBefore;
+    private String postedAfter;
+    private String postedBefore;
 
     // Ad type filters
     private Boolean featured;
@@ -119,6 +117,19 @@ public class AdvertisementSearchCriteria {
         }
         if (!isValidSortDirection(sortDirection)) {
             sortDirection = "DESC";
+        }
+
+        if (postedAfter != null) {
+            postedAfter = postedAfter.trim();
+            if (postedAfter.isEmpty()) {
+                postedAfter = null;
+            }
+        }
+        if (postedBefore != null) {
+            postedBefore = postedBefore.trim();
+            if (postedBefore.isEmpty()) {
+                postedBefore = null;
+            }
         }
     }
 

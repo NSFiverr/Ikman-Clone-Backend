@@ -23,8 +23,6 @@ public interface UserService {
     void resendVerificationToken(String email);
 
     // Password management
-    void initiatePasswordReset(String email);
-    void resetPassword(String token, String newPassword);
     void changePassword(Long userId, @Valid ChangePasswordRequest request);
 
     // User search and filtering

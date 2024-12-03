@@ -13,13 +13,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public interface AdminService {
     AdminResponse createAdmin(AdminCreationRequest adminCreationRequest);
 
-    Page<AdminResponse> getAdmin(AdminSearchCriteria criteria, Pageable pageable);
+    Page<AdminResponse> getAdmins(AdminSearchCriteria criteria, Pageable pageable);
 
     AdminResponse getAdminById(Long adminId);
 
     AdminResponse updateAdmin(Long adminId, UpdateAdminRequest updateAdminRequest);
 
-    void deleteAdmin(Long adminId, AdminDeletionRequest request, Long deletedBy);
+    void deleteAdmin(Long adminId, AdminDeletionRequest request, String token);
 
     DashboardStatsResponse getDashboardStats();
 

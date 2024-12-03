@@ -4,6 +4,7 @@ import com.marketplace.platform.domain.admin.Admin;
 import com.marketplace.platform.domain.admin.Role;
 import com.marketplace.platform.domain.advertisement.AdStatus;
 import com.marketplace.platform.domain.audit.AdminAuditLog;
+import com.marketplace.platform.domain.user.User;
 import com.marketplace.platform.dto.request.AdminCreationRequest;
 import com.marketplace.platform.dto.request.AdminDeletionRequest;
 import com.marketplace.platform.dto.request.AdminSearchCriteria;
@@ -20,6 +21,7 @@ import com.marketplace.platform.repository.advertisement.AdvertisementRepository
 import com.marketplace.platform.repository.audit.AdminAuditLogRepository;
 import com.marketplace.platform.repository.category.CategoryRepository;
 import com.marketplace.platform.repository.user.UserRepository;
+import com.marketplace.platform.service.auth.JwtService;
 import com.marketplace.platform.service.email.EmailService;
 import com.marketplace.platform.validator.admin.AdminValidator;
 import jakarta.mail.MessagingException;
@@ -37,6 +39,8 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -55,12 +59,14 @@ public class AdminServiceImpl implements AdminService {
     private final CategoryRepository categoryRepository;
     private final AdPackageRepository packageRepository;
 
+    private final JwtService jwtService;
+
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AdminResponse> getAdmin(AdminSearchCriteria criteria, Pageable pageable) {
+    public Page<AdminResponse> getAdmins(AdminSearchCriteria criteria, Pageable pageable) {
         Specification<Admin> spec = buildSpecification(criteria);
-        return adminRepository.findAll(spec, pageable)
+        return adminRepository.findActive(pageable)
                 .map(adminMapper::toResponse);
     }
 
@@ -178,8 +184,14 @@ public class AdminServiceImpl implements AdminService {
     }
     @Override
     @Transactional
-    public void deleteAdmin(Long adminId, AdminDeletionRequest request, Long deletedBy) {
-        adminValidator.validateAdminDeletion(adminId, request, deletedBy);
+    public void deleteAdmin(Long adminId, AdminDeletionRequest request, String token) {
+        Optional<Admin> optionalCurrentAdmin = jwtService.getAdminFromToken(token);
+
+        Admin currentAdmin = optionalCurrentAdmin.orElseThrow(() -> {
+            log.error("Admin not found for the given access token");
+            return new ResourceNotFoundException("Super admin performing the action is not found");
+        });
+        adminValidator.validateAdminDeletion(adminId, request, currentAdmin.getAdminId());
 
         Admin adminToDelete = adminRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin to delete not found"));
@@ -188,14 +200,14 @@ public class AdminServiceImpl implements AdminService {
         AdminAuditLog auditLog = adminMapper.toAuditLog(
                 adminToDelete,
                 "ADMIN_DELETED",
-                deletedBy,
+                currentAdmin.getAdminId(),
                 request.getReason()
         );
 
         // Soft delete the admin
         adminToDelete.setDeleted(true);
         adminToDelete.setDeletedAt(LocalDateTime.now());
-        adminToDelete.setDeletedBy(deletedBy);
+        adminToDelete.setDeletedBy(currentAdmin.getAdminId());
 
         // Save both the audit log and the updated admin
         auditLogRepository.save(auditLog);
@@ -210,7 +222,7 @@ public class AdminServiceImpl implements AdminService {
 
         return DashboardStatsResponse.builder()
                 .totalUsers(userRepository.count())
-                .totalAdmins(adminRepository.count())
+                .totalAdmins(adminRepository.countActive())
                 .totalPackages(packageRepository.count())
                 .totalCategories(categoryRepository.count())
                 .totalAdvertisements(advertisementRepository.count())
