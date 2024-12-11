@@ -18,7 +18,7 @@ import java.util.Optional;
 @Repository
 public interface AdminRepository extends JpaRepository<Admin, Long>, JpaSpecificationExecutor<Admin> {
 
-    @Query("SELECT a FROM Admin a WHERE a.deleted = false")
+    @Query("SELECT a FROM Admin a WHERE a.deleted IS NULL OR a.deleted = false")
     Page<Admin> findActive(Pageable pageable);
 
 

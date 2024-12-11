@@ -14,6 +14,7 @@ import com.marketplace.platform.mapper.AdvertisementMapper;
 import com.marketplace.platform.repository.advertisement.AdPackageRepository;
 import com.marketplace.platform.repository.advertisement.AdvertisementRepository;
 import com.marketplace.platform.repository.advertisement.AdvertisementSearchSpecification;
+import com.marketplace.platform.repository.category.AttributeDefinitionRepository;
 import com.marketplace.platform.service.auth.JwtService;
 import com.marketplace.platform.service.category.CategoryVersioningService;
 import com.marketplace.platform.service.storage.FirebaseStorageService;
@@ -52,6 +53,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
     private final JwtService jwtService;
+
+    private final AttributeDefinitionRepository attributeDefinitionRepository;
 
 
     @Override
@@ -501,12 +504,21 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         if (request.getAttributes() != null) {
             Set<AdAttribute> attributes = new HashSet<>();
 
+            // Get all valid attribute IDs for this category version
+            Set<Long> validAttributeIds = categoryVersion.getAttributes().stream()
+                    .map(attr -> attr.getAttributeDefinition().getAttrDefId())
+                    .collect(Collectors.toSet());
+
             for (AdAttributeRequest attrRequest : request.getAttributes()) {
-                AttributeDefinition definition = categoryVersion.getAttributes().stream()
-                        .filter(attr -> attr.getAttributeDefinition().getAttrDefId()
-                                .equals(attrRequest.getAttributeDefinitionId()))
-                        .map(CategoryVersionAttribute::getAttributeDefinition)
-                        .findFirst()
+                // First validate if this attribute ID is valid for the category
+                if (!validAttributeIds.contains(attrRequest.getAttributeDefinitionId())) {
+                    throw new BadRequestException("Invalid attribute for this category: " +
+                            attrRequest.getAttributeDefinitionId());
+                }
+
+                // Get a fresh, managed instance of AttributeDefinition from repository
+                AttributeDefinition definition = attributeDefinitionRepository
+                        .findById(attrRequest.getAttributeDefinitionId())
                         .orElseThrow(() -> new BadRequestException("Invalid attribute"));
 
                 AdAttribute attribute = createAttribute(advertisement, attrRequest, definition);
