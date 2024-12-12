@@ -15,6 +15,8 @@ public class UserResponse {
     private String profileImage;
     private String status;
     private boolean isEmailVerified;
+    private Boolean displayPhone;
+    private Boolean displayEmail;
     private LocalDateTime createdAt;
 }
 

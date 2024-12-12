@@ -22,6 +22,8 @@ public class UserMapper {
                 .lastName(request.getLastName())
                 .phone(request.getPhone())
                 .isEmailVerified(false)
+                .displayPhone(request.getDisplayPhone())
+                .displayEmail(request.getDisplayEmail())
                 .build();
     }
 
@@ -35,6 +37,8 @@ public class UserMapper {
                 .profileImage(user.getProfileImagePath())
                 .status(user.getStatus().name())
                 .isEmailVerified(user.getIsEmailVerified())
+                .displayPhone(user.getDisplayPhone())
+                .displayEmail(user.getDisplayEmail())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

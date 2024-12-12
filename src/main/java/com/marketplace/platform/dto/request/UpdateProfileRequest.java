@@ -17,4 +17,6 @@ public class UpdateProfileRequest {
     private String phone;
     private String address;
     private String bio;
+    private Boolean displayPhone;
+    private Boolean displayEmail;
 }

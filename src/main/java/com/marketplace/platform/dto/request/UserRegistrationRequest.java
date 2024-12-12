@@ -20,4 +20,8 @@ public class UserRegistrationRequest {
     private String lastName;
 
     private String phone;
+
+    private Boolean displayPhone;
+
+    private Boolean displayEmail;
 }

@@ -76,6 +76,14 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "display_phone", nullable = false)
+    @Builder.Default
+    private Boolean displayPhone = true;
+
+    @Column(name = "display_email", nullable = false)
+    @Builder.Default
+    private Boolean displayEmail = true;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -198,6 +198,14 @@ public class UserServiceImpl implements UserService {
                 user.setStatus(request.getStatus());
             }
 
+            if (request.getDisplayEmail() != null) {
+                user.setDisplayEmail(request.getDisplayEmail());
+            }
+            if (request.getDisplayPhone() != null) {
+                user.setDisplayPhone(request.getDisplayPhone());
+            }
+
+
             user.setUpdatedAt(LocalDateTime.now());
             User updatedUser = userRepository.save(user);
 
@@ -411,6 +419,8 @@ public class UserServiceImpl implements UserService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phone(request.getPhone())
+                .displayEmail(request.getDisplayEmail())
+                .displayPhone(request.getDisplayPhone())
                 .status(UserStatus.PENDING)
                 .isEmailVerified(false)
                 .build();
@@ -456,6 +466,12 @@ public class UserServiceImpl implements UserService {
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
         user.setUpdatedAt(LocalDateTime.now());
+        if (request.getDisplayEmail() != null) {
+            user.setDisplayEmail(request.getDisplayEmail());
+        }
+        if (request.getDisplayPhone() != null) {
+            user.setDisplayPhone(request.getDisplayPhone());
+        }
     }
 
     private User findUserById(Long userId) {

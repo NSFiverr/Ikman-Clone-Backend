@@ -34,6 +34,9 @@ public class UserUpdateRequest {
 
     private Boolean isEmailVerified;
 
+    private Boolean displayPhone;
+    private Boolean displayEmail;
+
     // Custom validation method if needed
     public boolean hasUpdates() {
         return email != null ||
@@ -42,6 +45,8 @@ public class UserUpdateRequest {
                 phone != null ||
                 status != null ||
                 profileImagePath != null ||
-                isEmailVerified != null;
+                isEmailVerified != null ||
+                displayPhone != null ||
+                displayEmail != null;
     }
 }
