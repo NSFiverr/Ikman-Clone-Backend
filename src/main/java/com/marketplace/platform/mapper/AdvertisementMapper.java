@@ -44,6 +44,7 @@ public class AdvertisementMapper {
                 .adPackage(toPackageResponse(advertisement.getAdPackage()))
                 .attributes(toAttributeResponses(advertisement.getAttributes()))
                 .mediaItems(toMediaResponses(advertisement.getMediaItems()))
+                .paymentProof(toPaymentProofResponse(advertisement.getPaymentProof()))
                 .favoriteCount((long) advertisement.getFavorites().size())
                 .isFavorited(isFavorited)
                 .isOwner(isOwner)
@@ -101,6 +102,21 @@ public class AdvertisementMapper {
                 .mimeType(media.getMimeType())
                 .fileSize(media.getFileSize())
                 .displayOrder(media.getDisplayOrder())
+                .build();
+    }
+
+    private PaymentProofResponse toPaymentProofResponse(PaymentProof paymentProof) {
+        if (paymentProof == null) {
+            return null;
+        }
+
+        return PaymentProofResponse.builder()
+                .id(paymentProof.getId())
+                .firebaseUrl(paymentProof.getFirebaseUrl())
+                .originalFilename(paymentProof.getOriginalFilename())
+                .verifiedBy(paymentProof.getVerifiedBy())
+                .verifiedAt(paymentProof.getVerifiedAt())
+                .createdAt(paymentProof.getCreatedAt())
                 .build();
     }
 

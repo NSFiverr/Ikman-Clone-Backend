@@ -3,6 +3,7 @@ package com.marketplace.platform.dto.request;
 import com.marketplace.platform.domain.advertisement.ItemCondition;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -45,4 +46,5 @@ public class AdvertisementCreateRequest {
 
     private Set<AdAttributeRequest> attributes = new HashSet<>();
     private Set<MediaRequest> mediaItems = new HashSet<>();
+    private MultipartFile paymentProof;
 }

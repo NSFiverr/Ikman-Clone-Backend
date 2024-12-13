@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,10 @@ public class AdvertisementValidator {
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
             "image/jpeg", "image/png"
+    );
+
+    private static final Set<String> ALLOWED_PAYMENT_PROOF_TYPES = Set.of(
+            "image/jpeg", "image/png", "application/pdf"
     );
 
     // add more words as needed
@@ -226,6 +231,26 @@ public class AdvertisementValidator {
                 && request.getMediaItems().size() > adPackage.getMaxMediaItems()) {
             throw new BadRequestException("Exceeds package media limit: " + adPackage.getMaxMediaItems());
         }
+
+        // Validate payment proof for paid packages
+        if (adPackage.getPrice().compareTo(BigDecimal.ZERO) > 0) {
+            if (request.getPaymentProof() == null || request.getPaymentProof().isEmpty()) {
+                throw new BadRequestException("Payment proof is required for paid packages");
+            }
+            validatePaymentProofFile(request.getPaymentProof());
+        }
+    }
+
+    private void validatePaymentProofFile(MultipartFile file) {
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new BadRequestException("Payment proof file size exceeds 10MB limit");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_PAYMENT_PROOF_TYPES.contains(contentType)) {
+            throw new BadRequestException("Invalid payment proof file type. Allowed: " +
+                    String.join(", ", ALLOWED_PAYMENT_PROOF_TYPES));
+        }
     }
 
     private void validateMedia(AdvertisementCreateRequest request) {
@@ -257,11 +282,31 @@ public class AdvertisementValidator {
                 .anyMatch(word -> lowerContent.contains(word.toLowerCase()));
     }
 
+    public AdStatus validateFlaggedWordsAndGetStatus(AdvertisementCreateRequest request) {
+        String contentToCheck = (request.getTitle() + " " +
+                (request.getDescription() != null ? request.getDescription() : "")).toLowerCase();
+
+        if (containsFlaggedContent(contentToCheck)) {
+            return AdStatus.PENDING_REVIEW;
+        }
+
+        return AdStatus.ACTIVE;
+    }
+
     public AdStatus validateContentAndGetStatus(AdvertisementCreateRequest request) {
         String contentToCheck = (request.getTitle() + " " +
                 (request.getDescription() != null ? request.getDescription() : "")).toLowerCase();
 
-        return containsFlaggedContent(contentToCheck) ?
-                AdStatus.PENDING_REVIEW : AdStatus.ACTIVE;
+        // Check if package is paid
+        AdPackage adPackage = adPackageRepository.findById(request.getPackageId())
+                .orElseThrow(() -> new BadRequestException("Invalid package"));
+
+        // For paid packages or flagged content, set to PENDING_REVIEW
+        if (adPackage.getPrice().compareTo(BigDecimal.ZERO) > 0 ||
+                containsFlaggedContent(contentToCheck)) {
+            return AdStatus.PENDING_REVIEW;
+        }
+
+        return AdStatus.ACTIVE;
     }
 }

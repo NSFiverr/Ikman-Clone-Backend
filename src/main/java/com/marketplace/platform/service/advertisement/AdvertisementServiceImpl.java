@@ -1,5 +1,6 @@
 package com.marketplace.platform.service.advertisement;
 
+import com.marketplace.platform.domain.admin.Admin;
 import com.marketplace.platform.domain.advertisement.*;
 import com.marketplace.platform.domain.category.AttributeDefinition;
 import com.marketplace.platform.domain.category.CategoryVersion;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -59,7 +61,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
     @Override
     @Transactional
-    public AdvertisementResponse createAdvertisement(AdvertisementCreateRequest request, String  token) {
+    public AdvertisementResponse createAdvertisement(AdvertisementCreateRequest request, String token) {
         Optional<User> optionalCurrentUser = jwtService.getUserFromToken(token);
         validator.validateCreateRequest(request);
         Set<String> uploadedPaths = new HashSet<>();
@@ -71,7 +73,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
             AdPackage adPackage = adPackageRepository.findById(request.getPackageId())
                     .orElseThrow(() -> new BadRequestException("Invalid package"));
 
-            // Get the initial status based on content validation
+            // Get the initial status based on content validation and package type
             AdStatus initialStatus = validator.validateContentAndGetStatus(request);
 
             Advertisement advertisement = optionalCurrentUser.map(currentUser ->
@@ -81,6 +83,20 @@ public class AdvertisementServiceImpl implements AdvertisementService {
                         return new ResourceNotFoundException("User not found");
                     });
 
+            // Handle payment proof for paid packages
+            if (adPackage.getPrice().compareTo(BigDecimal.ZERO) > 0 && request.getPaymentProof() != null) {
+                String paymentProofPath = firebaseStorageService.uploadFile(
+                        request.getPaymentProof(),
+                        "payment-proofs/" + UUID.randomUUID()
+                );
+                uploadedPaths.add(paymentProofPath);
+
+                PaymentProof paymentProof = new PaymentProof();
+                paymentProof.setAdvertisement(advertisement);
+                paymentProof.setFirebaseUrl(paymentProofPath);
+                paymentProof.setOriginalFilename(request.getPaymentProof().getOriginalFilename());
+                advertisement.setPaymentProof(paymentProof);
+            }
 
             Set<AdMedia> mediaItems = new HashSet<>();
             if (request.getMediaItems() != null && !request.getMediaItems().isEmpty()) {
@@ -101,18 +117,46 @@ public class AdvertisementServiceImpl implements AdvertisementService {
                     log.error("Failed to delete file during rollback: {}", path);
                 }
             });
-            throw e instanceof BadRequestException ? (BadRequestException) e : new BadRequestException("Failed to create advertisement");
+            throw e instanceof BadRequestException ? (BadRequestException) e :
+                    new BadRequestException("Failed to create advertisement");
         }
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public AdvertisementResponse getPendingAdvertisement(Long id) {
+        Advertisement advertisement = advertisementRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Advertisement not found"));
+
+        if (advertisement.getStatus() != AdStatus.PENDING_REVIEW) {
+            throw new BadRequestException("Advertisement is not pending review");
+        }
+
+        return advertisementMapper.toResponse(advertisement, false, false);
+    }
+
+    @Override
     @Transactional
-    public AdvertisementResponse approveAdvertisement(Long adId) {
+    public AdvertisementResponse approveAdvertisement(Long adId, String token) {
         Advertisement advertisement = advertisementRepository.findById(adId)
                 .orElseThrow(() -> new ResourceNotFoundException("Advertisement not found"));
 
         if (advertisement.getStatus() != AdStatus.PENDING_REVIEW) {
             throw new BadRequestException("Advertisement is not pending review");
+        }
+
+        Optional<Admin> optionalAdmin = jwtService.getAdminFromToken(token);
+
+        Admin admin = optionalAdmin.orElseThrow(() -> {
+            log.error("Admin not found for the given access token");
+            return new ResourceNotFoundException("Requires admin access");
+        });
+
+        // Update payment proof verification if exists
+        PaymentProof paymentProof = advertisement.getPaymentProof();
+        if (paymentProof != null) {
+            paymentProof.setVerifiedBy(admin.getAdminId());
+            paymentProof.setVerifiedAt(LocalDateTime.now());
         }
 
         advertisement.setStatus(AdStatus.ACTIVE);
@@ -124,12 +168,26 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
     @Override
     @Transactional
-    public AdvertisementResponse rejectAdvertisement(Long adId) {
+    public AdvertisementResponse rejectAdvertisement(Long adId, String token) {
         Advertisement advertisement = advertisementRepository.findById(adId)
                 .orElseThrow(() -> new ResourceNotFoundException("Advertisement not found"));
 
         if (advertisement.getStatus() != AdStatus.PENDING_REVIEW) {
             throw new BadRequestException("Advertisement is not pending review");
+        }
+
+        Optional<Admin> optionalAdmin = jwtService.getAdminFromToken(token);
+
+        Admin admin = optionalAdmin.orElseThrow(() -> {
+            log.error("Admin not found for the given access token");
+            return new ResourceNotFoundException("Requires admin access");
+        });
+
+        // Update payment proof verification if exists
+        PaymentProof paymentProof = advertisement.getPaymentProof();
+        if (paymentProof != null) {
+            paymentProof.setVerifiedBy(admin.getAdminId());
+            paymentProof.setVerifiedAt(LocalDateTime.now());
         }
 
         advertisement.setStatus(AdStatus.SUSPENDED);
@@ -212,6 +270,12 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         Set<String> uploadedPaths = new HashSet<>();
         try {
             AdvertisementCreateRequest refinedReq = advertisementMapper.toCreateRequest(request, existingAd);
+
+            // Check for flagged content
+            AdStatus newStatus = validator.validateFlaggedWordsAndGetStatus(refinedReq);
+            if (newStatus == AdStatus.PENDING_REVIEW) {
+                existingAd.setStatus(AdStatus.PENDING_REVIEW);
+            }
 
             // Update basic fields
             updateBasicFields(existingAd, refinedReq);

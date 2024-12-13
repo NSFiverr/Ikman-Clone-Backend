@@ -46,4 +46,7 @@ public class AdvertisementResponse {
     private Long favoriteCount;
     private Boolean isFavorited;
     private Boolean isOwner;
+
+
+    private PaymentProofResponse paymentProof;
 }

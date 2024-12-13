@@ -136,6 +136,10 @@ public class Advertisement {
     @JoinColumn(name = "category_version_id", nullable = false)
     private CategoryVersion categoryVersion;
 
+    @OneToOne(mappedBy = "advertisement", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private PaymentProof paymentProof;
+
     @PrePersist
     protected void onCreate() {
         if (categoryVersion == null) {

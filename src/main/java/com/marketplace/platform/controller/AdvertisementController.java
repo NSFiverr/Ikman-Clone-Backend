@@ -39,6 +39,7 @@ public class AdvertisementController {
             @RequestParam("files") List<MultipartFile> files,
             @RequestParam("mediaTypes") List<MediaType> mediaTypes,
             @RequestParam("displayOrders") List<Integer> displayOrders,
+            @RequestParam(value = "paymentProof", required = false) MultipartFile paymentProof,
             @RequestHeader("Authorization") String accessToken
     ) {
         if (files.size() != mediaTypes.size() || files.size() != displayOrders.size()) {
@@ -47,6 +48,7 @@ public class AdvertisementController {
 
         AdvertisementCreateRequest request = deserializer.deserialize(advertisementData);
         request.setMediaItems(adMediaService.createMediaRequests(files, mediaTypes, displayOrders));
+        request.setPaymentProof(paymentProof);
 
         AdvertisementResponse response = advertisementService.createAdvertisement(request, accessToken);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -140,18 +142,27 @@ public class AdvertisementController {
         return ResponseEntity.ok(advertisementService.getPendingReviewAdvertisements(pageable));
     }
 
-    @PostMapping("/{id}/moderation/approve")
-    public ResponseEntity<AdvertisementResponse> approveAdvertisement(
+    @GetMapping("/moderation/pending/{id}")
+    public ResponseEntity<AdvertisementResponse> getPendingAdvertisement(
             @PathVariable Long id
     ) {
-        return ResponseEntity.ok(advertisementService.approveAdvertisement(id));
+        return ResponseEntity.ok(advertisementService.getPendingAdvertisement(id));
+    }
+
+    @PostMapping("/{id}/moderation/approve")
+    public ResponseEntity<AdvertisementResponse> approveAdvertisement(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String accessToken
+    ) {
+        return ResponseEntity.ok(advertisementService.approveAdvertisement(id, accessToken));
     }
 
     @PostMapping("/{id}/moderation/reject")
     public ResponseEntity<AdvertisementResponse> rejectAdvertisement(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String accessToken
     ) {
-        return ResponseEntity.ok(advertisementService.rejectAdvertisement(id));
+        return ResponseEntity.ok(advertisementService.rejectAdvertisement(id, accessToken));
     }
 
 }

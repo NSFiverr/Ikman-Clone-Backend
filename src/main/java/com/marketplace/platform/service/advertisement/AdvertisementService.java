@@ -21,8 +21,8 @@ import java.util.List;
 public interface AdvertisementService {
     AdvertisementResponse createAdvertisement(AdvertisementCreateRequest request, String  token);
 
-    AdvertisementResponse approveAdvertisement(Long adId);
-    AdvertisementResponse rejectAdvertisement(Long adId);
+    AdvertisementResponse approveAdvertisement(Long adId, String token);
+    AdvertisementResponse rejectAdvertisement(Long adId, String token);
     Page<AdvertisementResponse> getPendingReviewAdvertisements(Pageable pageable);
     AdvertisementResponse getAdvertisement(Long id, String token);
     Page<AdvertisementResponse> getAllAdvertisements(Pageable pageable);
@@ -42,5 +42,7 @@ public interface AdvertisementService {
 
     Page<AdvertisementListingProjection> searchAdvertisements(AdvertisementSearchCriteria criteria, Pageable pageable);
     Page<AdvertisementListingProjection> getNearbyAdvertisements(AdvertisementSearchCriteria criteria, Pageable pageable);
+
+    AdvertisementResponse getPendingAdvertisement(Long id);
 
 }
