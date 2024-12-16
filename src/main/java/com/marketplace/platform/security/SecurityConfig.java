@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/users/verify/resend").permitAll()
                         .requestMatchers("/api/v1/users/email/check").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/advertisements/nearby").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/advertisements/search").permitAll()
 
                         // Swagger/OpenAPI endpoints
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
