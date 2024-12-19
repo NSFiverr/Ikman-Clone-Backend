@@ -1,5 +1,7 @@
 package com.marketplace.platform.domain.interaction;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.marketplace.platform.domain.advertisement.Advertisement;
 import com.marketplace.platform.domain.user.User;
 import jakarta.persistence.*;
@@ -16,12 +18,15 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_id", nullable = false)
+    @JsonIgnoreProperties({"messages", "participants", "hibernateLazyInitializer", "handler"})
     private Conversation conversation;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
+    @JsonIgnoreProperties({"conversations", "messages", "hibernateLazyInitializer", "handler"})
     private User sender;
 
     @Column(columnDefinition = "TEXT", nullable = false)

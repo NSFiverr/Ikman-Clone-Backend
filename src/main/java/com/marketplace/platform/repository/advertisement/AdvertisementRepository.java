@@ -36,6 +36,7 @@ public interface AdvertisementRepository extends
     boolean existsByCategoryVersionIdAndStatusActive(@Param("categoryVersionId") Long categoryVersionId);
 
 
+
     @QueryHints({
             @QueryHint(name = org.hibernate.annotations.QueryHints.CACHEABLE, value = "true"),
             @QueryHint(name = org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE, value = "50")

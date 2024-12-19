@@ -1,6 +1,7 @@
 package com.marketplace.platform.domain.interaction;
 
-import com.marketplace.platform.domain.advertisement.Advertisement;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,14 +20,14 @@ public class Conversation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ad_id", nullable = false)
-    private Advertisement advertisement;
-
+    @JsonManagedReference
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"conversation"})
     private List<Message> messages = new ArrayList<>();
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"conversation"})
     private Set<ConversationParticipant> participants = new HashSet<>();
 
     @Column(name = "last_message_at")
@@ -34,4 +35,10 @@ public class Conversation {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        lastMessageAt = LocalDateTime.now();
+    }
 }

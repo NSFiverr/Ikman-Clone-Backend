@@ -5,6 +5,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,4 +47,10 @@ public class FirebaseConfig {
                 .build()
                 .getService();
     }
+
+    @Bean
+    public FirebaseMessaging firebaseMessaging(FirebaseApp firebaseApp) {
+        return FirebaseMessaging.getInstance(firebaseApp);
+    }
+
 }

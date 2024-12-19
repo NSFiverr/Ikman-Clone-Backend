@@ -3,8 +3,6 @@ package com.marketplace.platform.domain.advertisement;
 import com.marketplace.platform.domain.category.Category;
 import com.marketplace.platform.domain.category.CategoryVersion;
 import com.marketplace.platform.domain.interaction.AdView;
-import com.marketplace.platform.domain.interaction.Conversation;
-import com.marketplace.platform.domain.interaction.Message;
 import com.marketplace.platform.domain.interaction.UserFavorite;
 import com.marketplace.platform.domain.search.SearchIndex;
 import com.marketplace.platform.domain.user.User;
@@ -29,7 +27,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"mediaItems", "attributes", "favorites", "conversations", "views", "searchIndices"})
+@EqualsAndHashCode(exclude = {"mediaItems", "attributes", "favorites", "views", "searchIndices"})
 public class Advertisement {
 
     private static final GeometryFactory geometryFactory = new GeometryFactory();
@@ -117,10 +115,6 @@ public class Advertisement {
     @OneToMany(mappedBy = "advertisement")
     private Set<UserFavorite> favorites = new HashSet<>();
 
-    @ToString.Exclude
-    @Builder.Default
-    @OneToMany(mappedBy = "advertisement")
-    private Set<Conversation> conversations = new HashSet<>();
 
     @ToString.Exclude
     @Builder.Default

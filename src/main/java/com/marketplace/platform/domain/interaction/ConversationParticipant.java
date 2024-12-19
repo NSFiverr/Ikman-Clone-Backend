@@ -1,5 +1,7 @@
 package com.marketplace.platform.domain.interaction;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.marketplace.platform.domain.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -17,10 +19,13 @@ public class ConversationParticipant {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_id", nullable = false)
+    @JsonIgnoreProperties({"participants", "messages", "hibernateLazyInitializer", "handler"})
     private Conversation conversation;
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"conversations", "messages", "hibernateLazyInitializer", "handler"})
     private User user;
 
     @Column(name = "last_read_at")
